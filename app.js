@@ -72,6 +72,8 @@ function createTitleInput(event) {
     document.body.removeEventListener('click', createTitleInput);
 }
 
+
+
 // Open a specific note for editing
 function openPage(id) {
     document.body.innerHTML = '';
