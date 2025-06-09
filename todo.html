@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            background-color: #f8f5f0;
+            color: #5d534a;
+            padding: 40px 20px;
+            max-width: 100%;
+            margin: 0;
+            padding-left: 10%;
+        }
+        
+        #task-input {
+            width: 90%;
+            border: none;
+            border-bottom: 1px solid #e6dfd3;
+            padding: 10px 0;
+            font-size: 14px;
+            outline: none;
+            margin-bottom: 20px;
+            background-color: transparent;
+            color: #5d534a;
+        }
+        
+        #task-input::placeholder {
+            color: #c0b8ad;
+        }
+        
+        ul {
+            list-style-type: none;
+        }
+        
+        #task-list {
+           width: 90%; 
+        }
+
+        li {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            width: 100%; 
+            position: relative; 
+        }
+        
+        .checkbox {
+            width: 14px;
+            height: 14px;
+            border: 1px solid #d9cfbe;
+            border-radius: 50%;
+            margin-right: 10px;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .checkbox.checked {
+            border-color: #a99d8b;
+        }
+        
+        .checkbox.checked:after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #a99d8b;
+        }
+        
+        span {
+            flex: 1;
+            font-size: 14px;
+            color: #5d534a;
+        }
+        
+        .completed {
+            color: #b5aa9a;
+            text-decoration: line-through;
+        }
+        
+        .delete {
+            opacity: 0;
+            cursor: pointer;
+            font-size: 16px;
+            color: #c0b8ad;
+            padding-left: 10px;
+            position: absolute; 
+            right: 0;
+            transition: opacity 0.2s;
+        }
+        
+        li:hover .delete {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <input type="text" id="task-input" placeholder="Add task...">
+    <ul id="task-list"></ul>
+
+    <script>
+        const taskInput = document.getElementById('task-input');
+        const taskList = document.getElementById('task-list');
+        
+        // Add task function
+        function addTask() {
+            const taskText = taskInput.value.trim();
+            
+            if (taskText !== '') {
+                // Create new task elements
+                const li = document.createElement('li');
+                
+                const checkbox = document.createElement('div');
+                checkbox.className = 'checkbox';
+                
+                const taskSpan = document.createElement('span');
+                taskSpan.textContent = taskText;
+                
+                const deleteBtn = document.createElement('div');
+                deleteBtn.className = 'delete';
+                deleteBtn.innerHTML = '×';
+                
+                // Add event listeners
+                checkbox.addEventListener('click', function() {
+                    this.classList.toggle('checked');
+                    taskSpan.classList.toggle('completed');
+                });
+                
+                deleteBtn.addEventListener('click', function() {
+                    taskList.removeChild(li);
+                });
+                
+                // Add elements to list item
+                li.appendChild(checkbox);
+                li.appendChild(taskSpan);
+                li.appendChild(deleteBtn);
+                
+                // Add list item to task list
+                taskList.appendChild(li);
+                
+                // Clear input
+                taskInput.value = '';
+            }
+        }
+        
+        // Event listeners for adding tasks
+        taskInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
+    </script>
+</body>
+</html>

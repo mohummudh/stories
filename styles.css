@@ -1,12 +1,68 @@
 html, body {
-    height: 100%;
     margin: 0;
-    padding: 40px;
+    padding: 0;
     background-color: #f8f5f1;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     line-height: 1.6;
     box-sizing: border-box;
-    overflow-y: auto;
+    color: #333;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    min-height: 100%;
+}
+
+/* Dark mode styles */
+html.dark-mode,
+body.dark-mode {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+}
+
+.dark-mode-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #666;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+}
+
+.dark-mode-toggle:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.05);
+}
+
+body.dark-mode .dark-mode-toggle {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ccc;
+}
+
+body.dark-mode .dark-mode-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.main-container {
+    padding: 80px 120px 40px 120px;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.writing-container {
+    padding: 80px 120px 40px 120px;
+    box-sizing: border-box;
+    position: relative;
 }
 
 input {
@@ -24,27 +80,357 @@ textarea {
     background: transparent;
     border: none;
     outline: none;
-    font-size: inherit;
+    font-size: 16px;
     font-family: inherit;
     width: 100%;
-    max-width: 450px;
-    height: 90vh;
+    max-width: 480px;
+    min-height: 60vh;
     padding: 0;
-    margin: 20px 0 0 0;
-    outline: none;
+    margin: 8px 0 60px 0;
     resize: none;
-    /* overflow: hidden; */
+    color: #444;
+    line-height: 1.75;
+    transition: color 0.2s ease;
+    letter-spacing: 0.01em;
+    overflow: visible;
+}
+
+body.dark-mode textarea {
+    color: #d0d0d0;
+}
+
+textarea::placeholder {
+    color: #bbb;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+body.dark-mode textarea::placeholder {
+    color: #666;
+}
+
+textarea:focus {
+    color: #222;
+}
+
+body.dark-mode textarea:focus {
+    color: #f0f0f0;
+}
+
+textarea:focus + .word-count {
+    opacity: 0.4;
+}
+
+/* Better text selection */
+textarea::selection {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: inherit;
+}
+
+body.dark-mode textarea::selection {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: inherit;
 }
 
 .title {
-    font-weight: bold;
-    margin: 0;
+    font-weight: 700;
+    font-size: 48px;
+    margin: 0 0 16px 0;
     padding: 0;
+    color: #333;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+body.dark-mode .title {
+    color: #e0e0e0;
+}
+
+.title:hover {
+    color: #555;
+}
+
+body.dark-mode .title:hover {
+    color: #bbb;
+}
+
+.title-edit {
+    font-weight: 700;
+    font-size: 48px;
+    color: #333;
+    margin: 0 0 16px 0;
+    padding: 0;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    width: 100%;
+    max-width: 480px;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    box-sizing: border-box;
+    display: block;
+}
+
+body.dark-mode .title-edit {
+    color: #e0e0e0;
 }
 
 .page-title {
-    font-weight: bold;
+    font-weight: 600;
+    font-size: 17px;
     cursor: pointer;
     padding: 0;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    opacity: 0.85;
+    color: #444;
+    letter-spacing: -0.005em;
+}
+
+body.dark-mode .page-title {
+    color: #c0c0c0;
+}
+
+.page-title:hover {
+    opacity: 1;
+    transform: translateX(3px);
+    color: #222;
+}
+
+body.dark-mode .page-title:hover {
+    color: #e0e0e0;
+}
+
+.word-count {
+    position: fixed;
+    bottom: 40px;
+    right: 90px;
+    font-size: 12px;
+    color: #999;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+body.dark-mode .word-count {
+    color: #666;
+}
+
+.page-date {
+    font-size: 12px;
+    color: #999;
+    margin-left: 8px;
+    font-weight: normal;
+}
+
+body.dark-mode .page-date {
+    color: #666;
+}
+
+.title-container {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 8px;
+    position: relative;
+    justify-content: space-between;
+}
+
+.title-content {
+    display: flex;
+    align-items: baseline;
+    flex: 1;
+}
+
+.delete-button {
+    color: #ccc;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 8px;
+    margin-left: 12px;
+    opacity: 0;
+    transition: all 0.2s ease;
+    user-select: none;
+    line-height: 1;
+}
+
+body.dark-mode .delete-button {
+    color: #555;
+}
+
+.title-container:hover .delete-button {
+    opacity: 0.6;
+}
+
+.delete-button:hover {
+    opacity: 1 !important;
+    color: #999;
+}
+
+body.dark-mode .delete-button:hover {
+    color: #888;
+}
+
+.number-hint {
+    position: absolute;
+    left: -25px;
+    font-size: 11px;
+    color: #ccc;
+    font-weight: 400;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    width: 15px;
+    text-align: right;
+}
+
+body.dark-mode .number-hint {
+    color: #555;
+}
+
+.title-container:hover .number-hint {
+    opacity: 0.5;
+}
+
+.empty-hint {
+    text-align: center;
+    color: #999;
+    font-size: 14px;
+    margin-top: 20vh;
+    line-height: 1.8;
+}
+
+body.dark-mode .empty-hint {
+    color: #666;
+}
+
+.search-container {
+    margin-bottom: 40px;
+}
+
+.search-input {
+    width: 100%;
+    max-width: 480px;
+    font-size: 16px;
+    color: #444;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    padding: 0;
+    margin-bottom: 30px;
+    letter-spacing: 0.01em;
+    font-weight: 400;
+}
+
+body.dark-mode .search-input {
+    color: #d0d0d0;
+}
+
+.search-input::placeholder {
+    color: #bbb;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+body.dark-mode .search-input::placeholder {
+    color: #666;
+}
+
+.search-input:focus {
+    color: #222;
+}
+
+body.dark-mode .search-input:focus {
+    color: #f0f0f0;
+}
+
+.search-hint {
+    text-align: center;
+    color: #bbb;
+    font-size: 14px;
+    margin-top: 10vh;
+    line-height: 1.8;
+    opacity: 0.7;
+}
+
+body.dark-mode .search-hint {
+    color: #666;
+}
+
+.search-result {
+    opacity: 0.9;
+}
+
+.search-result:hover {
+    opacity: 1;
+}
+
+/* Focus mode - dim UI when writing */
+.writing-container.focused .title {
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+}
+
+.writing-container.focused .word-count {
+    opacity: 0.2;
+}
+
+/* Restore on hover */
+.writing-container.focused .title:hover {
+    opacity: 0.8;
+}
+
+.writing-container.focused .word-count:hover {
+    opacity: 0.6;
+}
+
+@media (max-width: 600px) {
+    .main-container {
+        padding: 40px 40px 20px 40px;
+    }
+    
+    .writing-container {
+        padding: 40px 40px 20px 40px;
+    }
+    
+    .title {
+        font-size: 36px;
+    }
+    
+    .title-edit {
+        font-size: 36px;
+        width: 100%;
+        max-width: 480px;
+        background: transparent;
+        border: none;
+        outline: none;
+        font-family: inherit;
+        box-sizing: border-box;
+        display: block;
+        padding: 0;
+        margin: 0 0 16px 0;
+        font-weight: 700;
+        color: #333;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+    }
+    
+    body.dark-mode .title-edit {
+        color: #e0e0e0;
+    }
+    
+    .word-count {
+        bottom: 20px;
+        right: 70px;
+    }
+    
+    .dark-mode-toggle {
+        bottom: 20px;
+        right: 20px;
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
 }
