@@ -463,6 +463,7 @@ function displayMainPage() {
         const hint = document.createElement('div');
         hint.className = 'empty-hint';
         hint.innerHTML = 'Click anywhere to start writing<br><span style="font-size: 11px; opacity: 0.6;">Press / to search • 1-9 for quick access • ⌘D for dark mode • ⌘F for focus mode • Escape to return • ⌘⌫ to delete</span>';
+        hint.style.pointerEvents = 'none'; // Allow clicks to pass through to the container
         mainContainer.appendChild(hint);
     }
 
@@ -626,14 +627,35 @@ function displayMainPage() {
 function createTitleInput(event) {
     if (event.target !== event.currentTarget) return;
 
+    // Remove the empty hint if it exists
+    const existingHint = event.currentTarget.querySelector('.empty-hint');
+    if (existingHint) {
+        existingHint.remove();
+    }
+
     const titleInput = document.createElement('input');
     titleInput.type = 'text';
+    titleInput.placeholder = 'Enter title...';
+    titleInput.style.cssText = `
+        width: 100%;
+        border: none;
+        outline: none;
+        font-size: 18px;
+        font-weight: 600;
+        background: transparent;
+        color: inherit;
+        padding: 0;
+        margin: 0;
+    `;
     
     event.currentTarget.appendChild(titleInput);
     titleInput.focus();
 
+    let pageCreated = false; // Flag to prevent duplicate creation
+
     titleInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && titleInput.value.trim() !== '') {
+        if (e.key === 'Enter' && titleInput.value.trim() !== '' && !pageCreated) {
+            pageCreated = true;
             const newPage = {
                 id: Date.now(),
                 title: titleInput.value.trim(),
@@ -645,6 +667,32 @@ function createTitleInput(event) {
             userPages.push(newPage);
             saveUserPages(userPages);
             openPage(newPage.id);
+        } else if (e.key === 'Escape') {
+            // Simply refresh the main page instead of trying to clean up manually
+            displayMainPage();
+        }
+    });
+
+    titleInput.addEventListener('blur', function() {
+        if (pageCreated) return; // Don't process blur if page was already created
+        
+        if (titleInput.value.trim() === '') {
+            // Simply refresh the main page instead of trying to clean up manually
+            displayMainPage();
+        } else {
+            // If there's text but user clicked away, save it as a new page
+            pageCreated = true;
+            const newPage = {
+                id: Date.now(),
+                title: titleInput.value.trim(),
+                content: '',
+                createdAt: Date.now(),
+                modifiedAt: Date.now()
+            };
+            const userPages = getUserPages();
+            userPages.push(newPage);
+            saveUserPages(userPages);
+            displayMainPage(); // Refresh the page to show the new story
         }
     });
 
