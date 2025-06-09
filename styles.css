@@ -8,6 +8,14 @@ html, body {
     color: #333;
     transition: background-color 0.3s ease, color 0.3s ease;
     min-height: 100%;
+    height: 100%;
+    overflow-x: hidden;
+}
+
+/* Prevent scrolling when auth container is active */
+body.auth-active {
+    overflow: hidden;
+    height: 100vh;
 }
 
 /* Dark mode styles */
@@ -386,51 +394,277 @@ body.dark-mode .search-hint {
     opacity: 0.6;
 }
 
-@media (max-width: 600px) {
-    .main-container {
-        padding: 40px 40px 20px 40px;
+/* Authentication Styles */
+.auth-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 20px;
+    text-align: center;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    box-sizing: border-box;
+}
+
+.app-title {
+    font-size: 160px;
+    font-weight: 200;
+    margin: 0 0 10px 0;
+    color: #333;
+    letter-spacing: -0.05em;
+    line-height: 0.85;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body.dark-mode .app-title {
+    color: #e0e0e0;
+}
+
+.auth-subtitle {
+    font-size: 18px;
+    color: #666;
+    margin: 0 0 60px 0;
+    font-weight: 400;
+    opacity: 0.8;
+}
+
+body.dark-mode .auth-subtitle {
+    color: #999;
+}
+
+.auth-form-container {
+    width: 100%;
+    max-width: 320px;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.auth-input {
+    background: none;
+    border: none;
+    border-bottom: 1px solid #ddd;
+    padding: 16px 0;
+    font-size: 16px;
+    color: #333;
+    outline: none;
+    transition: border-color 0.2s ease;
+    font-family: inherit;
+}
+
+.auth-input::placeholder {
+    color: #bbb;
+    opacity: 1;
+}
+
+.auth-input:focus {
+    border-bottom-color: #666;
+}
+
+body.dark-mode .auth-input {
+    color: #e0e0e0;
+    border-bottom-color: #444;
+}
+
+body.dark-mode .auth-input::placeholder {
+    color: #666;
+}
+
+body.dark-mode .auth-input:focus {
+    border-bottom-color: #999;
+}
+
+.auth-button {
+    background: none;
+    border: none;
+    padding: 20px 0;
+    font-size: 16px;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    margin-top: 16px;
+    font-weight: 400;
+    position: relative;
+}
+
+.auth-button:hover {
+    opacity: 0.7;
+}
+
+.auth-button:hover::after {
+    content: '';
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.3;
+}
+
+body.dark-mode .auth-button {
+    color: #e0e0e0;
+}
+
+.auth-toggle {
+    background: none;
+    border: none;
+    padding: 20px 0;
+    font-size: 14px;
+    color: #666;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    font-family: inherit;
+    opacity: 0.8;
+}
+
+.auth-toggle:hover {
+    opacity: 1;
+}
+
+body.dark-mode .auth-toggle {
+    color: #999;
+}
+
+.auth-error {
+    color: #d32f2f;
+    font-size: 14px;
+    margin-top: 8px;
+    opacity: 0.9;
+    min-height: 20px;
+}
+
+body.dark-mode .auth-error {
+    color: #f44336;
+}
+
+/* User Menu Styles */
+.user-menu {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.user-menu-toggle {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    opacity: 0.6;
+    font-family: inherit;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1001;
+    backdrop-filter: blur(10px);
+}
+
+.user-menu-toggle:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.05);
+}
+
+body.dark-mode .user-menu-toggle {
+    color: #ccc;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .user-menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.user-menu-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-8px);
+    transition: all 0.25s ease;
+    margin-left: 8px;
+    padding-left: 8px;
+}
+
+.user-menu.active .user-menu-buttons {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+}
+
+.user-menu-button {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 6px 8px;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+    font-family: inherit;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.user-menu-button:hover {
+    opacity: 1;
+}
+
+body.dark-mode .user-menu-button {
+    color: #ccc;
+}
+
+body.dark-mode .user-menu-button:hover {
+    opacity: 1;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .app-title {
+        font-size: 100px;
+        font-weight: 200;
     }
     
-    .writing-container {
-        padding: 40px 40px 20px 40px;
+    .auth-subtitle {
+        font-size: 16px;
+        margin-bottom: 40px;
     }
     
-    .title {
-        font-size: 36px;
+    .auth-form-container {
+        max-width: 280px;
     }
     
-    .title-edit {
-        font-size: 36px;
-        width: 100%;
-        max-width: 480px;
-        background: transparent;
-        border: none;
-        outline: none;
-        font-family: inherit;
-        box-sizing: border-box;
-        display: block;
-        padding: 0;
-        margin: 0 0 16px 0;
-        font-weight: 700;
-        color: #333;
-        letter-spacing: -0.02em;
-        line-height: 1.1;
+    .auth-container {
+        padding: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .app-title {
+        font-size: 80px;
     }
     
-    body.dark-mode .title-edit {
-        color: #e0e0e0;
-    }
-    
-    .word-count {
-        bottom: 20px;
-        right: 70px;
-    }
-    
-    .dark-mode-toggle {
-        bottom: 20px;
-        right: 20px;
-        width: 32px;
-        height: 32px;
-        font-size: 14px;
+    .auth-subtitle {
+        margin-bottom: 30px;
     }
 }

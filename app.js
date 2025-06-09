@@ -1,3 +1,39 @@
+// User Authentication System
+let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+let users = JSON.parse(localStorage.getItem('users')) || [];
+
+// User management functions
+function createUser(email, password, name) {
+    const userId = Date.now().toString();
+    const user = {
+        id: userId,
+        email: email.toLowerCase(),
+        password: password, // In production, this would be hashed
+        name: name,
+        createdAt: Date.now(),
+        bio: ''
+    };
+    users.push(user);
+    localStorage.setItem('users', JSON.stringify(users));
+    return user;
+}
+
+function authenticateUser(email, password) {
+    const user = users.find(u => u.email === email.toLowerCase() && u.password === password);
+    if (user) {
+        currentUser = user;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        return true;
+    }
+    return false;
+}
+
+function signOut() {
+    currentUser = null;
+    localStorage.removeItem('currentUser');
+    displayAuthPage();
+}
+
 // Initialize or load existing notes from localStorage
 let pages = JSON.parse(localStorage.getItem('pages')) || [];
 
@@ -80,15 +116,242 @@ function getReadingTime(wordCount) {
 
 // Delete a page by its ID and return to main page
 function deletePage(id) {
+    const userPages = getUserPages();
     // Find the index of the page we want to delete
-    const pageIndex = pages.findIndex(page => page.id === id);
+    const pageIndex = userPages.findIndex(page => page.id === id);
     
     // Remove the page if found
     if (pageIndex !== -1) {
-        pages.splice(pageIndex, 1);
-        savePages();
+        userPages.splice(pageIndex, 1);
+        saveUserPages(userPages);
         displayMainPage();
     }
+}
+
+// User-specific page management
+function getUserPages() {
+    if (!currentUser) return [];
+    const userPages = localStorage.getItem(`pages_${currentUser.id}`);
+    return userPages ? JSON.parse(userPages) : [];
+}
+
+function saveUserPages(userPages) {
+    if (!currentUser) return;
+    localStorage.setItem(`pages_${currentUser.id}`, JSON.stringify(userPages));
+}
+
+// Authentication interface
+function displayAuthPage() {
+    document.body.innerHTML = '';
+    document.body.classList.add('auth-active');
+    
+    // Create dark mode toggle
+    createDarkModeToggle();
+    
+    const authContainer = document.createElement('div');
+    authContainer.className = 'auth-container';
+    document.body.appendChild(authContainer);
+    
+    // App title
+    const appTitle = document.createElement('h1');
+    appTitle.className = 'app-title';
+    appTitle.textContent = 'Stories';
+    authContainer.appendChild(appTitle);
+    
+    // Subtitle
+    const subtitle = document.createElement('p');
+    subtitle.className = 'auth-subtitle';
+    subtitle.textContent = 'Share authentic stories from your life';
+    authContainer.appendChild(subtitle);
+    
+    // Auth form container
+    const formContainer = document.createElement('div');
+    formContainer.className = 'auth-form-container';
+    authContainer.appendChild(formContainer);
+    
+    // Toggle between sign in and sign up
+    let isSignUp = false;
+    
+    function createAuthForm() {
+        formContainer.innerHTML = '';
+        
+        const form = document.createElement('div');
+        form.className = 'auth-form';
+        
+        // Name field (only for sign up)
+        if (isSignUp) {
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.placeholder = 'Your name';
+            nameInput.className = 'auth-input';
+            nameInput.id = 'name';
+            form.appendChild(nameInput);
+        }
+        
+        // Email field
+        const emailInput = document.createElement('input');
+        emailInput.type = 'email';
+        emailInput.placeholder = 'Email';
+        emailInput.className = 'auth-input';
+        emailInput.id = 'email';
+        form.appendChild(emailInput);
+        
+        // Password field
+        const passwordInput = document.createElement('input');
+        passwordInput.type = 'password';
+        passwordInput.placeholder = 'Password';
+        passwordInput.className = 'auth-input';
+        passwordInput.id = 'password';
+        form.appendChild(passwordInput);
+        
+        // Submit button
+        const submitButton = document.createElement('button');
+        submitButton.className = 'auth-button';
+        submitButton.textContent = isSignUp ? 'Create Account' : 'Sign In';
+        form.appendChild(submitButton);
+        
+        // Toggle link
+        const toggleLink = document.createElement('button');
+        toggleLink.className = 'auth-toggle';
+        toggleLink.textContent = isSignUp ? 'Already have an account? Sign in' : 'New here? Create an account';
+        form.appendChild(toggleLink);
+        
+        // Error message container
+        const errorContainer = document.createElement('div');
+        errorContainer.className = 'auth-error';
+        form.appendChild(errorContainer);
+        
+        formContainer.appendChild(form);
+        
+        // Event handlers
+        submitButton.addEventListener('click', handleSubmit);
+        toggleLink.addEventListener('click', () => {
+            isSignUp = !isSignUp;
+            createAuthForm();
+            // Focus first input
+            setTimeout(() => {
+                const firstInput = form.querySelector('.auth-input');
+                if (firstInput) firstInput.focus();
+            }, 0);
+        });
+        
+        // Handle enter key
+        form.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                handleSubmit();
+            }
+        });
+        
+        // Focus first input
+        setTimeout(() => {
+            const firstInput = form.querySelector('.auth-input');
+            if (firstInput) firstInput.focus();
+        }, 0);
+    }
+    
+    function handleSubmit() {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const name = isSignUp ? document.getElementById('name')?.value.trim() : '';
+        const errorContainer = document.querySelector('.auth-error');
+        
+        // Clear previous errors
+        errorContainer.textContent = '';
+        
+        // Validation
+        if (!email || !password) {
+            errorContainer.textContent = 'Please fill in all fields';
+            return;
+        }
+        
+        if (isSignUp && !name) {
+            errorContainer.textContent = 'Please enter your name';
+            return;
+        }
+        
+        if (isSignUp) {
+            // Check if user already exists
+            if (users.find(u => u.email === email.toLowerCase())) {
+                errorContainer.textContent = 'An account with this email already exists';
+                return;
+            }
+            
+            // Create new user
+            const user = createUser(email, password, name);
+            currentUser = user;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            displayMainPage();
+        } else {
+            // Sign in
+            if (authenticateUser(email, password)) {
+                displayMainPage();
+            } else {
+                errorContainer.textContent = 'Invalid email or password';
+            }
+        }
+    }
+    
+    createAuthForm();
+}
+
+// Create user menu
+function createUserMenu(isWritingMode = false) {
+    const userMenu = document.createElement('div');
+    userMenu.className = 'user-menu';
+    
+    const menuToggle = document.createElement('button');
+    menuToggle.className = 'user-menu-toggle';
+    
+    // Always append the toggle button first to ensure proper positioning
+    userMenu.appendChild(menuToggle);
+    
+    if (isWritingMode) {
+        // In writing mode, show back arrow and clicking goes back to main page
+        menuToggle.textContent = '←';
+        menuToggle.addEventListener('click', () => {
+            displayMainPage();
+        });
+    } else {
+        // In main page, show user name and clicking toggles the inline buttons
+        menuToggle.textContent = currentUser.name;
+        
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'user-menu-buttons';
+        
+        const profileButton = document.createElement('button');
+        profileButton.className = 'user-menu-button';
+        profileButton.textContent = 'Profile';
+        profileButton.addEventListener('click', () => {
+            // TODO: Add profile page
+            userMenu.classList.remove('active');
+        });
+        
+        const signOutButton = document.createElement('button');
+        signOutButton.className = 'user-menu-button';
+        signOutButton.textContent = 'Sign Out';
+        signOutButton.addEventListener('click', () => {
+            signOut();
+        });
+        
+        buttonsContainer.appendChild(profileButton);
+        buttonsContainer.appendChild(signOutButton);
+        // Append buttons container after the toggle button
+        userMenu.appendChild(buttonsContainer);
+        
+        menuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userMenu.classList.toggle('active');
+        });
+        
+        // Close buttons when clicking outside
+        document.addEventListener('click', () => {
+            userMenu.classList.remove('active');
+        });
+    }
+    
+    document.body.appendChild(userMenu);
+    
+    return userMenu;
 }
 
 // Display the main page where users can create new notes
@@ -97,9 +360,16 @@ function displayMainPage() {
     document.body.removeEventListener('click', createTitleInput);
     
     document.body.innerHTML = '';
+    document.body.classList.remove('auth-active');
     
     // Create dark mode toggle
     createDarkModeToggle();
+    
+    // Create user menu
+    createUserMenu();
+    
+    // Load user-specific pages
+    const userPages = getUserPages();
     
     // Create main container
     const mainContainer = document.createElement('div');
@@ -110,7 +380,7 @@ function displayMainPage() {
     mainContainer.addEventListener('click', createTitleInput);
 
     // Sort pages by most recently modified
-    const sortedPages = pages.sort((a, b) => {
+    const sortedPages = userPages.sort((a, b) => {
         const aTime = a.modifiedAt || a.createdAt || a.id;
         const bTime = b.modifiedAt || b.createdAt || b.id;
         return bTime - aTime;
@@ -195,8 +465,9 @@ function createTitleInput(event) {
                 createdAt: Date.now(),
                 modifiedAt: Date.now()
             };
-            pages.push(newPage);
-            savePages();
+            const userPages = getUserPages();
+            userPages.push(newPage);
+            saveUserPages(userPages);
             openPage(newPage.id);
         }
     });
@@ -210,6 +481,9 @@ function displaySearchResults(query) {
     
     // Create dark mode toggle
     createDarkModeToggle();
+    
+    // Create user menu
+    createUserMenu();
     
     const mainContainer = document.createElement('div');
     mainContainer.className = 'main-container';
@@ -227,6 +501,9 @@ function displaySearchResults(query) {
     searchContainer.appendChild(searchInput);
     mainContainer.appendChild(searchContainer);
     
+    // Get user pages for search
+    const userPages = getUserPages();
+    
     // Show hint if no query
     if (query.trim() === '') {
         const hint = document.createElement('div');
@@ -234,7 +511,7 @@ function displaySearchResults(query) {
         hint.innerHTML = 'Start typing to search through your notes<br><span style="font-size: 12px; opacity: 0.6;">Press Escape to return</span>';
         mainContainer.appendChild(hint);
     } else {
-        const results = pages.filter(page => 
+        const results = userPages.filter(page => 
             page.title.toLowerCase().includes(query.toLowerCase()) ||
             page.content.toLowerCase().includes(query.toLowerCase())
         );
@@ -313,8 +590,12 @@ function openPage(id) {
 
     // Create dark mode toggle
     createDarkModeToggle();
+    
+    // Create user menu for writing mode
+    createUserMenu(true);
 
-    const page = pages.find(p => p.id === id);
+    const userPages = getUserPages();
+    const page = userPages.find(p => p.id === id);
     if (!page) {
         displayMainPage();
         return;
@@ -347,7 +628,7 @@ function openPage(id) {
                 if (newTitle) {
                     page.title = newTitle;
                     page.modifiedAt = Date.now();
-                    savePages();
+                    saveUserPages(userPages);
                     titleElement.textContent = newTitle;
                 }
                 titleInput.replaceWith(titleElement);
@@ -362,7 +643,7 @@ function openPage(id) {
             if (newTitle) {
                 page.title = newTitle;
                 page.modifiedAt = Date.now();
-                savePages();
+                saveUserPages(userPages);
                 titleElement.textContent = newTitle;
             }
             titleInput.replaceWith(titleElement);
@@ -397,7 +678,7 @@ function openPage(id) {
         const words = countWords(textarea.value);
         wordCount.textContent = `${words} words${getReadingTime(words)}`;
         autoResize();
-        savePages();
+        saveUserPages(userPages);
     });
     
     // Better text editing experience
@@ -560,8 +841,95 @@ function openPage(id) {
     textarea.focus();
 }
 
+// Publishing System
+function getPublishedStories() {
+    const published = localStorage.getItem('publishedStories');
+    return published ? JSON.parse(published) : [];
+}
+
+function savePublishedStories(stories) {
+    localStorage.setItem('publishedStories', JSON.stringify(stories));
+}
+
+function publishStory(pageId) {
+    if (!currentUser) return false;
+    
+    const userPages = getUserPages();
+    const page = userPages.find(p => p.id === pageId);
+    if (!page || !page.content.trim()) return false;
+    
+    const publishedStories = getPublishedStories();
+    
+    // Check if already published
+    const existingIndex = publishedStories.findIndex(story => 
+        story.pageId === pageId && story.authorId === currentUser.id
+    );
+    
+    const publishedStory = {
+        id: existingIndex >= 0 ? publishedStories[existingIndex].id : Date.now().toString(),
+        pageId: pageId,
+        title: page.title,
+        content: page.content,
+        authorId: currentUser.id,
+        authorName: currentUser.name,
+        publishedAt: Date.now(),
+        lastUpdated: Date.now()
+    };
+    
+    if (existingIndex >= 0) {
+        publishedStories[existingIndex] = publishedStory;
+    } else {
+        publishedStories.push(publishedStory);
+    }
+    
+    savePublishedStories(publishedStories);
+    
+    // Mark page as published
+    page.isPublished = true;
+    page.publishedAt = publishedStory.publishedAt;
+    saveUserPages(userPages);
+    
+    return true;
+}
+
+function unpublishStory(pageId) {
+    if (!currentUser) return false;
+    
+    const publishedStories = getPublishedStories();
+    const filteredStories = publishedStories.filter(story => 
+        !(story.pageId === pageId && story.authorId === currentUser.id)
+    );
+    
+    savePublishedStories(filteredStories);
+    
+    // Mark page as unpublished
+    const userPages = getUserPages();
+    const page = userPages.find(p => p.id === pageId);
+    if (page) {
+        page.isPublished = false;
+        delete page.publishedAt;
+        saveUserPages(userPages);
+    }
+    
+    return true;
+}
+
+function isStoryPublished(pageId) {
+    if (!currentUser) return false;
+    const publishedStories = getPublishedStories();
+    return publishedStories.some(story => 
+        story.pageId === pageId && story.authorId === currentUser.id
+    );
+}
+
 // Initialize the app
-document.addEventListener('DOMContentLoaded', displayMainPage);
+document.addEventListener('DOMContentLoaded', () => {
+    if (currentUser) {
+        displayMainPage();
+    } else {
+        displayAuthPage();
+    }
+});
 
 // Global keyboard shortcuts
 document.addEventListener('keydown', (e) => {
@@ -583,7 +951,8 @@ document.addEventListener('keydown', (e) => {
     // Quick navigation with numbers
     if (e.key >= '1' && e.key <= '9' && !e.metaKey && !e.ctrlKey) {
         const index = parseInt(e.key) - 1;
-        const sortedPages = pages.sort((a, b) => {
+        const userPages = getUserPages();
+        const sortedPages = userPages.sort((a, b) => {
             const aTime = a.modifiedAt || a.createdAt || a.id;
             const bTime = b.modifiedAt || b.createdAt || b.id;
             return bTime - aTime;
