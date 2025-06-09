@@ -1,3 +1,23 @@
+// Story analytics
+function getStoryViews() {
+    return JSON.parse(localStorage.getItem('storyViews')) || {};
+}
+
+function saveStoryViews(views) {
+    localStorage.setItem('storyViews', JSON.stringify(views));
+}
+
+function incrementStoryView(storyId) {
+    const views = getStoryViews();
+    views[storyId] = (views[storyId] || 0) + 1;
+    saveStoryViews(views);
+}
+
+function getStoryViewCount(storyId) {
+    const views = getStoryViews();
+    return views[storyId] || 0;
+}
+
 // User Authentication System
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
 let users = JSON.parse(localStorage.getItem('users')) || [];
@@ -318,11 +338,19 @@ function createUserMenu(isWritingMode = false) {
         const buttonsContainer = document.createElement('div');
         buttonsContainer.className = 'user-menu-buttons';
         
+        const browseButton = document.createElement('button');
+        browseButton.className = 'user-menu-button';
+        browseButton.textContent = 'Browse';
+        browseButton.addEventListener('click', () => {
+            displayReadingPage();
+            userMenu.classList.remove('active');
+        });
+        
         const profileButton = document.createElement('button');
         profileButton.className = 'user-menu-button';
         profileButton.textContent = 'Profile';
         profileButton.addEventListener('click', () => {
-            // TODO: Add profile page
+            displayProfilePage();
             userMenu.classList.remove('active');
         });
         
@@ -333,6 +361,7 @@ function createUserMenu(isWritingMode = false) {
             signOut();
         });
         
+        buttonsContainer.appendChild(browseButton);
         buttonsContainer.appendChild(profileButton);
         buttonsContainer.appendChild(signOutButton);
         // Append buttons container after the toggle button
@@ -390,7 +419,7 @@ function displayMainPage() {
     if (sortedPages.length === 0) {
         const hint = document.createElement('div');
         hint.className = 'empty-hint';
-        hint.innerHTML = 'Click anywhere to start writing<br><span style="font-size: 11px; opacity: 0.6;">Press / to search • 1-9 for quick access • ⌘D for dark mode • Escape to return • ⌘⌫ to delete</span>';
+        hint.innerHTML = 'Click anywhere to start writing<br><span style="font-size: 11px; opacity: 0.6;">Press / to search • 1-9 for quick access • ⌘D for dark mode • ⌘F for focus mode • Escape to return • ⌘⌫ to delete</span>';
         mainContainer.appendChild(hint);
     }
 
@@ -409,6 +438,15 @@ function displayMainPage() {
         titleElement.style.cursor = 'pointer';
         titleElement.style.marginBottom = '15px';
         
+        // Add published indicator
+        if (isStoryPublished(page.id)) {
+            const publishedIndicator = document.createElement('span');
+            publishedIndicator.className = 'published-indicator';
+            publishedIndicator.textContent = ' ✓';
+            publishedIndicator.title = 'Published story';
+            titleElement.appendChild(publishedIndicator);
+        }
+        
         // Add subtle number indicator for quick access
         if (index < 9) {
             const numberHint = document.createElement('span');
@@ -419,10 +457,33 @@ function displayMainPage() {
         
         const dateElement = document.createElement('span');
         dateElement.className = 'page-date';
-        dateElement.textContent = formatDate(page.modifiedAt || page.createdAt || page.id);
+        let dateText = formatDate(page.modifiedAt || page.createdAt || page.id);
+        
+        // Add view count for published stories
+        if (isStoryPublished(page.id)) {
+            const publishedStories = getPublishedStories();
+            const publishedStory = publishedStories.find(s => s.pageId === page.id && s.authorId === currentUser.id);
+            if (publishedStory) {
+                const viewCount = getStoryViewCount(publishedStory.id);
+                dateText += ` • ${viewCount} view${viewCount !== 1 ? 's' : ''}`;
+            }
+        }
+        
+        dateElement.textContent = dateText;
         
         titleContent.appendChild(titleElement);
         titleContent.appendChild(dateElement);
+        
+        // Create action buttons container
+        const actionButtons = document.createElement('div');
+        actionButtons.className = 'action-buttons';
+        
+        // Create publish/unpublish button
+        const publishButton = document.createElement('span');
+        publishButton.className = 'publish-button';
+        const isPublished = isStoryPublished(page.id);
+        publishButton.textContent = isPublished ? '◉' : '○';
+        publishButton.title = isPublished ? 'Unpublish story' : 'Publish story';
         
         // Create delete button
         const deleteButton = document.createElement('span');
@@ -435,13 +496,85 @@ function displayMainPage() {
             openPage(page.id);
         });
         
+        publishButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const wasPublished = isStoryPublished(page.id);
+            
+            if (wasPublished) {
+                if (confirm('Are you sure you want to unpublish this story? It will no longer be visible to readers.')) {
+                    unpublishStory(page.id);
+                } else {
+                    return;
+                }
+            } else {
+                if (page.content.trim() === '') {
+                    alert('Cannot publish an empty story. Please add some content first.');
+                    return;
+                }
+                
+                const wordCount = countWords(page.content);
+                if (wordCount < 10) {
+                    const proceed = confirm('This story is quite short (less than 10 words). Are you sure you want to publish it?');
+                    if (!proceed) return;
+                }
+                
+                publishStory(page.id);
+            }
+            
+            // Update button appearance and published indicator
+            const nowPublished = isStoryPublished(page.id);
+            publishButton.textContent = nowPublished ? '◉' : '○';
+            publishButton.title = nowPublished ? 'Unpublish story' : 'Publish story';
+            
+            // Update published indicator in title
+            const existingIndicator = titleElement.querySelector('.published-indicator');
+            if (nowPublished && !existingIndicator) {
+                const publishedIndicator = document.createElement('span');
+                publishedIndicator.className = 'published-indicator';
+                publishedIndicator.textContent = ' ✓';
+                publishedIndicator.title = 'Published story';
+                titleElement.appendChild(publishedIndicator);
+            } else if (!nowPublished && existingIndicator) {
+                existingIndicator.remove();
+            }
+            
+            // Show brief feedback
+            const feedback = document.createElement('div');
+            feedback.textContent = nowPublished ? 'Story published!' : 'Story unpublished';
+            feedback.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${nowPublished ? '#4CAF50' : '#FF9800'};
+                color: white;
+                padding: 8px 16px;
+                border-radius: 4px;
+                z-index: 1000;
+                font-size: 14px;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            `;
+            document.body.appendChild(feedback);
+            
+            // Animate feedback
+            setTimeout(() => feedback.style.opacity = '1', 10);
+            setTimeout(() => {
+                feedback.style.opacity = '0';
+                setTimeout(() => document.body.removeChild(feedback), 300);
+            }, 2000);
+        });
+        
         deleteButton.addEventListener('click', (e) => {
             e.stopPropagation();
             deletePage(page.id);
         });
         
+        actionButtons.appendChild(publishButton);
+        actionButtons.appendChild(deleteButton);
+        
         titleContainer.appendChild(titleContent);
-        titleContainer.appendChild(deleteButton);
+        titleContainer.appendChild(actionButtons);
         mainContainer.appendChild(titleContainer);
     });
 }
@@ -922,6 +1055,764 @@ function isStoryPublished(pageId) {
     );
 }
 
+// Reading Experience
+function displayReadingPage() {
+    document.body.innerHTML = '';
+    document.body.classList.remove('auth-active');
+    
+    // Create dark mode toggle
+    createDarkModeToggle();
+    
+    // Create user menu
+    createUserMenu();
+    
+    // Create main container
+    const mainContainer = document.createElement('div');
+    mainContainer.className = 'main-container';
+    document.body.appendChild(mainContainer);
+    
+    // Page title
+    const pageTitle = document.createElement('h1');
+    pageTitle.className = 'title';
+    pageTitle.textContent = 'Stories';
+    pageTitle.style.cursor = 'pointer';
+    pageTitle.addEventListener('click', () => displayMainPage());
+    mainContainer.appendChild(pageTitle);
+    
+    // Back to my stories link
+    const backLink = document.createElement('div');
+    backLink.className = 'page-title';
+    backLink.textContent = '← Back to My Stories';
+    backLink.style.marginBottom = '20px';
+    backLink.addEventListener('click', () => displayMainPage());
+    mainContainer.appendChild(backLink);
+    
+    const publishedStories = getPublishedStories();
+    
+    if (publishedStories.length === 0) {
+        const emptyHint = document.createElement('div');
+        emptyHint.className = 'empty-hint';
+        emptyHint.innerHTML = `
+            <div>No published stories yet.</div>
+            <div>Be the first to share your story with the world.</div>
+        `;
+        mainContainer.appendChild(emptyHint);
+        return;
+    }
+    
+    // Add sort options if there are stories
+    const sortContainer = document.createElement('div');
+    sortContainer.style.marginBottom = '30px';
+    sortContainer.style.fontSize = '14px';
+    sortContainer.style.opacity = '0.7';
+    
+    const sortLabel = document.createElement('span');
+    sortLabel.textContent = 'Sort by: ';
+    sortContainer.appendChild(sortLabel);
+    
+    const sortByDate = document.createElement('span');
+    sortByDate.textContent = 'Most Recent';
+    sortByDate.style.cursor = 'pointer';
+    sortByDate.style.textDecoration = 'underline';
+    sortByDate.style.marginRight = '16px';
+    
+    const sortByAuthor = document.createElement('span');
+    sortByAuthor.textContent = 'Author';
+    sortByAuthor.style.cursor = 'pointer';
+    sortByAuthor.style.opacity = '0.5';
+    
+    let sortMode = 'date'; // 'date' or 'author'
+    
+    sortByDate.addEventListener('click', () => {
+        if (sortMode !== 'date') {
+            sortMode = 'date';
+            sortByDate.style.textDecoration = 'underline';
+            sortByDate.style.opacity = '1';
+            sortByAuthor.style.textDecoration = 'none';
+            sortByAuthor.style.opacity = '0.5';
+            displayReadingPage(); // Refresh with new sort
+        }
+    });
+    
+    sortByAuthor.addEventListener('click', () => {
+        if (sortMode !== 'author') {
+            sortMode = 'author';
+            sortByAuthor.style.textDecoration = 'underline';
+            sortByAuthor.style.opacity = '1';
+            sortByDate.style.textDecoration = 'none';
+            sortByDate.style.opacity = '0.5';
+            displayReadingPage(); // Refresh with new sort
+        }
+    });
+    
+    sortContainer.appendChild(sortByDate);
+    sortContainer.appendChild(sortByAuthor);
+    mainContainer.appendChild(sortContainer);
+    
+    // Sort stories based on current mode
+    const sortedStories = sortMode === 'date' 
+        ? publishedStories.sort((a, b) => b.publishedAt - a.publishedAt)
+        : publishedStories.sort((a, b) => a.authorName.localeCompare(b.authorName));
+    
+    sortedStories.forEach(story => {
+        const storyElement = document.createElement('div');
+        storyElement.className = 'title-container';
+        storyElement.style.marginBottom = '16px';
+        storyElement.style.cursor = 'pointer';
+        
+        const titleContent = document.createElement('div');
+        titleContent.className = 'title-content';
+        
+        const titleElement = document.createElement('div');
+        titleElement.className = 'page-title';
+        titleElement.textContent = story.title;
+        
+        const authorDate = document.createElement('span');
+        authorDate.className = 'page-date';
+        const wordCount = countWords(story.content);
+        const readingTime = getReadingTime(wordCount);
+        authorDate.textContent = `by ${story.authorName} • ${formatDate(story.publishedAt)}${readingTime}`;
+        
+        titleContent.appendChild(titleElement);
+        titleContent.appendChild(authorDate);
+        storyElement.appendChild(titleContent);
+        
+        storyElement.addEventListener('click', () => {
+            displayPublishedStory(story.id);
+        });
+        
+        mainContainer.appendChild(storyElement);
+    });
+}
+
+function displayPublishedStory(storyId) {
+    const publishedStories = getPublishedStories();
+    const story = publishedStories.find(s => s.id === storyId);
+    
+    if (!story) {
+        displayReadingPage();
+        return;
+    }
+    
+    // Increment view count
+    incrementStoryView(storyId);
+    
+    document.body.innerHTML = '';
+    
+    // Create dark mode toggle
+    createDarkModeToggle();
+    
+    // Create simple back button
+    const backButton = document.createElement('button');
+    backButton.className = 'user-menu-toggle';
+    backButton.textContent = '←';
+    backButton.style.position = 'fixed';
+    backButton.style.top = '20px';
+    backButton.style.left = '20px';
+    backButton.style.zIndex = '1000';
+    backButton.addEventListener('click', () => displayReadingPage());
+    document.body.appendChild(backButton);
+    
+    // Create reading container
+    const readingContainer = document.createElement('div');
+    readingContainer.className = 'writing-container';
+    document.body.appendChild(readingContainer);
+    
+    // Story title
+    const titleElement = document.createElement('h1');
+    titleElement.className = 'title';
+    titleElement.textContent = story.title;
+    titleElement.style.cursor = 'default';
+    readingContainer.appendChild(titleElement);
+    
+    // Author and date
+    const metaInfo = document.createElement('div');
+    metaInfo.style.fontSize = '14px';
+    metaInfo.style.color = '#999';
+    metaInfo.style.marginBottom = '40px';
+    metaInfo.style.opacity = '0.8';
+    metaInfo.textContent = `by ${story.authorName} • ${formatDate(story.publishedAt)}`;
+    readingContainer.appendChild(metaInfo);
+    
+    // Story content
+    const contentElement = document.createElement('div');
+    contentElement.style.fontSize = '16px';
+    contentElement.style.lineHeight = '1.75';
+    contentElement.style.whiteSpace = 'pre-wrap';
+    contentElement.style.color = 'inherit';
+    contentElement.style.maxWidth = '480px';
+    contentElement.textContent = story.content;
+    readingContainer.appendChild(contentElement);
+    
+    // Add reading progress indicator
+    const progressBar = document.createElement('div');
+    progressBar.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 2px;
+        background: #007acc;
+        z-index: 1000;
+        transition: width 0.1s ease;
+        width: 0%;
+    `;
+    document.body.appendChild(progressBar);
+    
+    // Update progress on scroll
+    function updateProgress() {
+        const scrolled = window.scrollY;
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = maxScroll > 0 ? (scrolled / maxScroll) * 100 : 0;
+        progressBar.style.width = `${Math.min(progress, 100)}%`;
+    }
+    
+    window.addEventListener('scroll', updateProgress);
+    updateProgress(); // Initial call
+}
+
+// User Profile System
+function displayProfilePage() {
+    document.body.innerHTML = '';
+    document.body.classList.remove('auth-active');
+    
+    // Create dark mode toggle
+    createDarkModeToggle();
+    
+    // Create user menu
+    createUserMenu();
+    
+    // Create main container
+    const mainContainer = document.createElement('div');
+    mainContainer.className = 'main-container';
+    document.body.appendChild(mainContainer);
+    
+    // Page title
+    const pageTitle = document.createElement('h1');
+    pageTitle.className = 'title';
+    pageTitle.textContent = 'Profile';
+    pageTitle.style.cursor = 'pointer';
+    pageTitle.addEventListener('click', () => displayMainPage());
+    mainContainer.appendChild(pageTitle);
+    
+    // Back to stories link
+    const backLink = document.createElement('div');
+    backLink.className = 'page-title';
+    backLink.textContent = '← Back to Stories';
+    backLink.style.marginBottom = '40px';
+    backLink.addEventListener('click', () => displayMainPage());
+    mainContainer.appendChild(backLink);
+    
+    // Profile container
+    const profileContainer = document.createElement('div');
+    profileContainer.className = 'profile-container';
+    mainContainer.appendChild(profileContainer);
+    
+    // User info section
+    const userInfoSection = document.createElement('div');
+    userInfoSection.className = 'profile-section';
+    
+    const userInfoTitle = document.createElement('h3');
+    userInfoTitle.className = 'profile-section-title';
+    userInfoTitle.textContent = 'Account Information';
+    userInfoSection.appendChild(userInfoTitle);
+    
+    // Name field
+    const nameField = createProfileField('Name', currentUser.name, 'name', (value) => {
+        currentUser.name = value;
+        updateUser(currentUser);
+        // Update the user menu display
+        const userMenuToggle = document.querySelector('.user-menu-toggle');
+        if (userMenuToggle && userMenuToggle.textContent !== '←') {
+            userMenuToggle.textContent = currentUser.name;
+        }
+    });
+    userInfoSection.appendChild(nameField);
+    
+    // Email field (read-only)
+    const emailField = createProfileField('Email', currentUser.email, 'email', null, true);
+    userInfoSection.appendChild(emailField);
+    
+    // Member since field (read-only)
+    const memberSince = formatDate(currentUser.createdAt);
+    const memberField = createProfileField('Member since', memberSince, 'member', null, true);
+    userInfoSection.appendChild(memberField);
+    
+    profileContainer.appendChild(userInfoSection);
+    
+    // Bio section
+    const bioSection = document.createElement('div');
+    bioSection.className = 'profile-section';
+    
+    const bioTitle = document.createElement('h3');
+    bioTitle.className = 'profile-section-title';
+    bioTitle.textContent = 'About';
+    bioSection.appendChild(bioTitle);
+    
+    const bioField = createProfileTextArea('Tell readers about yourself...', currentUser.bio || '', (value) => {
+        currentUser.bio = value;
+        updateUser(currentUser);
+    });
+    bioSection.appendChild(bioField);
+    
+    profileContainer.appendChild(bioSection);
+    
+    // Statistics section
+    const statsSection = document.createElement('div');
+    statsSection.className = 'profile-section';
+    
+    const statsTitle = document.createElement('h3');
+    statsTitle.className = 'profile-section-title';
+    statsTitle.textContent = 'Statistics';
+    statsSection.appendChild(statsTitle);
+    
+    const userPages = getUserPages();
+    const publishedStories = getPublishedStories().filter(story => story.authorId === currentUser.id);
+    
+    // Calculate total views
+    let totalViews = 0;
+    publishedStories.forEach(story => {
+        totalViews += getStoryViewCount(story.id);
+    });
+    
+    // Calculate total words
+    let totalWords = 0;
+    userPages.forEach(page => {
+        totalWords += countWords(page.content);
+    });
+    
+    const stats = [
+        { label: 'Stories written', value: userPages.length },
+        { label: 'Stories published', value: publishedStories.length },
+        { label: 'Total views', value: totalViews },
+        { label: 'Total words', value: totalWords.toLocaleString() }
+    ];
+    
+    stats.forEach(stat => {
+        const statElement = document.createElement('div');
+        statElement.className = 'profile-stat';
+        
+        const statValue = document.createElement('div');
+        statValue.className = 'profile-stat-value';
+        statValue.textContent = stat.value;
+        
+        const statLabel = document.createElement('div');
+        statLabel.className = 'profile-stat-label';
+        statLabel.textContent = stat.label;
+        
+        statElement.appendChild(statValue);
+        statElement.appendChild(statLabel);
+        statsSection.appendChild(statElement);
+    });
+    
+    profileContainer.appendChild(statsSection);
+    
+    // Account actions section
+    const actionsSection = document.createElement('div');
+    actionsSection.className = 'profile-section';
+    
+    const actionsTitle = document.createElement('h3');
+    actionsTitle.className = 'profile-section-title';
+    actionsTitle.textContent = 'Account Actions';
+    actionsSection.appendChild(actionsTitle);
+    
+    // Change password button
+    const changePasswordBtn = document.createElement('button');
+    changePasswordBtn.className = 'profile-action-button';
+    changePasswordBtn.textContent = 'Change Password';
+    changePasswordBtn.addEventListener('click', () => showChangePasswordDialog());
+    actionsSection.appendChild(changePasswordBtn);
+    
+    // Export data button
+    const exportDataBtn = document.createElement('button');
+    exportDataBtn.className = 'profile-action-button';
+    exportDataBtn.textContent = 'Export My Data';
+    exportDataBtn.addEventListener('click', () => exportUserData());
+    actionsSection.appendChild(exportDataBtn);
+    
+    // Delete account button
+    const deleteAccountBtn = document.createElement('button');
+    deleteAccountBtn.className = 'profile-action-button danger';
+    deleteAccountBtn.textContent = 'Delete Account';
+    deleteAccountBtn.addEventListener('click', () => showDeleteAccountDialog());
+    actionsSection.appendChild(deleteAccountBtn);
+    
+    profileContainer.appendChild(actionsSection);
+}
+
+function createProfileField(label, value, fieldId, onSave, readOnly = false) {
+    const fieldContainer = document.createElement('div');
+    fieldContainer.className = 'profile-field';
+    
+    const fieldLabel = document.createElement('label');
+    fieldLabel.className = 'profile-field-label';
+    fieldLabel.textContent = label;
+    fieldLabel.setAttribute('for', fieldId);
+    
+    const fieldInput = document.createElement('input');
+    fieldInput.type = 'text';
+    fieldInput.value = value;
+    fieldInput.id = fieldId;
+    fieldInput.className = 'profile-field-input';
+    fieldInput.readOnly = readOnly;
+    
+    if (!readOnly && onSave) {
+        let originalValue = value;
+        
+        fieldInput.addEventListener('blur', () => {
+            const newValue = fieldInput.value.trim();
+            if (newValue !== originalValue && newValue !== '') {
+                onSave(newValue);
+                originalValue = newValue;
+                showProfileFeedback('Updated successfully');
+            } else if (newValue === '') {
+                fieldInput.value = originalValue;
+            }
+        });
+        
+        fieldInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                fieldInput.blur();
+            } else if (e.key === 'Escape') {
+                fieldInput.value = originalValue;
+                fieldInput.blur();
+            }
+        });
+    }
+    
+    fieldContainer.appendChild(fieldLabel);
+    fieldContainer.appendChild(fieldInput);
+    
+    return fieldContainer;
+}
+
+function createProfileTextArea(placeholder, value, onSave) {
+    const fieldContainer = document.createElement('div');
+    fieldContainer.className = 'profile-field';
+    
+    const textarea = document.createElement('textarea');
+    textarea.placeholder = placeholder;
+    textarea.value = value;
+    textarea.className = 'profile-textarea';
+    
+    let originalValue = value;
+    
+    textarea.addEventListener('blur', () => {
+        const newValue = textarea.value.trim();
+        if (newValue !== originalValue) {
+            onSave(newValue);
+            originalValue = newValue;
+            showProfileFeedback('Bio updated');
+        }
+    });
+    
+    // Auto-resize
+    function autoResize() {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.max(textarea.scrollHeight, 80) + 'px';
+    }
+    
+    textarea.addEventListener('input', autoResize);
+    setTimeout(autoResize, 0);
+    
+    fieldContainer.appendChild(textarea);
+    return fieldContainer;
+}
+
+function updateUser(user) {
+    const userIndex = users.findIndex(u => u.id === user.id);
+    if (userIndex !== -1) {
+        users[userIndex] = { ...user };
+        localStorage.setItem('users', JSON.stringify(users));
+        localStorage.setItem('currentUser', JSON.stringify(user));
+    }
+}
+
+function showProfileFeedback(message) {
+    const feedback = document.createElement('div');
+    feedback.textContent = message;
+    feedback.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #4CAF50;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 4px;
+        z-index: 1000;
+        font-size: 14px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    `;
+    document.body.appendChild(feedback);
+    
+    setTimeout(() => feedback.style.opacity = '1', 10);
+    setTimeout(() => {
+        feedback.style.opacity = '0';
+        setTimeout(() => {
+            if (document.body.contains(feedback)) {
+                document.body.removeChild(feedback);
+            }
+        }, 300);
+    }, 2000);
+}
+
+function showChangePasswordDialog() {
+    const dialog = document.createElement('div');
+    dialog.className = 'profile-dialog-overlay';
+    
+    const dialogContent = document.createElement('div');
+    dialogContent.className = 'profile-dialog';
+    
+    const dialogTitle = document.createElement('h3');
+    dialogTitle.textContent = 'Change Password';
+    dialogTitle.style.marginBottom = '20px';
+    
+    const currentPasswordInput = document.createElement('input');
+    currentPasswordInput.type = 'password';
+    currentPasswordInput.placeholder = 'Current password';
+    currentPasswordInput.className = 'profile-dialog-input';
+    
+    const newPasswordInput = document.createElement('input');
+    newPasswordInput.type = 'password';
+    newPasswordInput.placeholder = 'New password';
+    newPasswordInput.className = 'profile-dialog-input';
+    
+    const confirmPasswordInput = document.createElement('input');
+    confirmPasswordInput.type = 'password';
+    confirmPasswordInput.placeholder = 'Confirm new password';
+    confirmPasswordInput.className = 'profile-dialog-input';
+    
+    const errorMessage = document.createElement('div');
+    errorMessage.className = 'profile-dialog-error';
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'profile-dialog-buttons';
+    
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = 'Cancel';
+    cancelButton.className = 'profile-dialog-button secondary';
+    cancelButton.addEventListener('click', () => document.body.removeChild(dialog));
+    
+    const saveButton = document.createElement('button');
+    saveButton.textContent = 'Change Password';
+    saveButton.className = 'profile-dialog-button primary';
+    saveButton.addEventListener('click', () => {
+        const currentPassword = currentPasswordInput.value;
+        const newPassword = newPasswordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        
+        errorMessage.textContent = '';
+        
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            errorMessage.textContent = 'Please fill in all fields';
+            return;
+        }
+        
+        if (currentUser.password !== currentPassword) {
+            errorMessage.textContent = 'Current password is incorrect';
+            return;
+        }
+        
+        if (newPassword.length < 6) {
+            errorMessage.textContent = 'New password must be at least 6 characters';
+            return;
+        }
+        
+        if (newPassword !== confirmPassword) {
+            errorMessage.textContent = 'New passwords do not match';
+            return;
+        }
+        
+        currentUser.password = newPassword;
+        updateUser(currentUser);
+        document.body.removeChild(dialog);
+        showProfileFeedback('Password changed successfully');
+    });
+    
+    buttonContainer.appendChild(cancelButton);
+    buttonContainer.appendChild(saveButton);
+    
+    dialogContent.appendChild(dialogTitle);
+    dialogContent.appendChild(currentPasswordInput);
+    dialogContent.appendChild(newPasswordInput);
+    dialogContent.appendChild(confirmPasswordInput);
+    dialogContent.appendChild(errorMessage);
+    dialogContent.appendChild(buttonContainer);
+    
+    dialog.appendChild(dialogContent);
+    document.body.appendChild(dialog);
+    
+    // Close on outside click
+    dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+            document.body.removeChild(dialog);
+        }
+    });
+    
+    currentPasswordInput.focus();
+}
+
+function exportUserData() {
+    const userData = {
+        user: {
+            name: currentUser.name,
+            email: currentUser.email,
+            bio: currentUser.bio,
+            createdAt: currentUser.createdAt
+        },
+        stories: getUserPages(),
+        publishedStories: getPublishedStories().filter(story => story.authorId === currentUser.id)
+    };
+    
+    const dataStr = JSON.stringify(userData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `stories-export-${currentUser.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    showProfileFeedback('Data exported successfully');
+}
+
+function showDeleteAccountDialog() {
+    const dialog = document.createElement('div');
+    dialog.className = 'profile-dialog-overlay';
+    
+    const dialogContent = document.createElement('div');
+    dialogContent.className = 'profile-dialog';
+    
+    const dialogTitle = document.createElement('h3');
+    dialogTitle.textContent = 'Delete Account';
+    dialogTitle.style.marginBottom = '20px';
+    dialogTitle.style.color = '#d32f2f';
+    
+    const warningText = document.createElement('p');
+    warningText.innerHTML = `
+        <strong>This action cannot be undone.</strong><br><br>
+        Deleting your account will permanently remove:
+        <br>• All your stories and drafts
+        <br>• Your published stories from public view
+        <br>• Your account information and profile
+        <br><br>
+        Type "<strong>DELETE</strong>" to confirm:
+    `;
+    warningText.style.lineHeight = '1.6';
+    warningText.style.marginBottom = '20px';
+    
+    const confirmInput = document.createElement('input');
+    confirmInput.type = 'text';
+    confirmInput.placeholder = 'Type DELETE to confirm';
+    confirmInput.className = 'profile-dialog-input';
+    
+    const passwordInput = document.createElement('input');
+    passwordInput.type = 'password';
+    passwordInput.placeholder = 'Enter your password';
+    passwordInput.className = 'profile-dialog-input';
+    
+    const errorMessage = document.createElement('div');
+    errorMessage.className = 'profile-dialog-error';
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'profile-dialog-buttons';
+    
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = 'Cancel';
+    cancelButton.className = 'profile-dialog-button secondary';
+    cancelButton.addEventListener('click', () => document.body.removeChild(dialog));
+    
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Delete Account';
+    deleteButton.className = 'profile-dialog-button danger';
+    deleteButton.addEventListener('click', () => {
+        const confirmText = confirmInput.value;
+        const password = passwordInput.value;
+        
+        errorMessage.textContent = '';
+        
+        if (confirmText !== 'DELETE') {
+            errorMessage.textContent = 'Please type DELETE to confirm';
+            return;
+        }
+        
+        if (password !== currentUser.password) {
+            errorMessage.textContent = 'Password is incorrect';
+            return;
+        }
+        
+        // Delete user data
+        deleteUserAccount();
+        document.body.removeChild(dialog);
+    });
+    
+    buttonContainer.appendChild(cancelButton);
+    buttonContainer.appendChild(deleteButton);
+    
+    dialogContent.appendChild(dialogTitle);
+    dialogContent.appendChild(warningText);
+    dialogContent.appendChild(confirmInput);
+    dialogContent.appendChild(passwordInput);
+    dialogContent.appendChild(errorMessage);
+    dialogContent.appendChild(buttonContainer);
+    
+    dialog.appendChild(dialogContent);
+    document.body.appendChild(dialog);
+    
+    // Close on outside click
+    dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+            document.body.removeChild(dialog);
+        }
+    });
+    
+    confirmInput.focus();
+}
+
+function deleteUserAccount() {
+    // Remove user from users array
+    users = users.filter(u => u.id !== currentUser.id);
+    localStorage.setItem('users', JSON.stringify(users));
+    
+    // Remove user's pages
+    localStorage.removeItem(`pages_${currentUser.id}`);
+    
+    // Remove user's published stories
+    const publishedStories = getPublishedStories();
+    const filteredStories = publishedStories.filter(story => story.authorId !== currentUser.id);
+    savePublishedStories(filteredStories);
+    
+    // Clear current user and redirect to auth
+    currentUser = null;
+    localStorage.removeItem('currentUser');
+    
+    // Show confirmation and redirect
+    const feedback = document.createElement('div');
+    feedback.textContent = 'Account deleted successfully';
+    feedback.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #d32f2f;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 4px;
+        z-index: 1000;
+        font-size: 14px;
+        opacity: 1;
+    `;
+    document.body.appendChild(feedback);
+    
+    setTimeout(() => {
+        displayAuthPage();
+    }, 2000);
+}
+
 // Initialize the app
 document.addEventListener('DOMContentLoaded', () => {
     if (currentUser) {
@@ -931,12 +1822,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Focus mode functionality
+let focusMode = false;
+
+function toggleFocusMode() {
+    focusMode = !focusMode;
+    const userMenu = document.querySelector('.user-menu');
+    const darkModeToggle = document.querySelector('.dark-mode-toggle');
+    
+    if (focusMode) {
+        if (userMenu) userMenu.style.opacity = '0.1';
+        if (darkModeToggle) darkModeToggle.style.opacity = '0.1';
+    } else {
+        if (userMenu) userMenu.style.opacity = '';
+        if (darkModeToggle) darkModeToggle.style.opacity = '';
+    }
+}
+
 // Global keyboard shortcuts
 document.addEventListener('keydown', (e) => {
     // Dark mode toggle with Cmd/Ctrl + D
     if ((e.metaKey || e.ctrlKey) && e.key === 'd' && !e.shiftKey) {
         e.preventDefault();
         toggleDarkMode();
+        return;
+    }
+    
+    // Focus mode toggle with Cmd/Ctrl + F
+    if ((e.metaKey || e.ctrlKey) && e.key === 'f' && document.querySelector('textarea')) {
+        e.preventDefault();
+        toggleFocusMode();
         return;
     }
     
