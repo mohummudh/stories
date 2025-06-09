@@ -18,6 +18,33 @@ function getStoryViewCount(storyId) {
     return views[storyId] || 0;
 }
 
+// URL routing for public profiles
+function getUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+        profile: params.get('profile'),
+        story: params.get('story')
+    };
+}
+
+function generateUserSlug(user) {
+    return user.name.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single
+        .trim('-'); // Remove leading/trailing hyphens
+}
+
+function getUserBySlug(slug) {
+    return users.find(user => generateUserSlug(user) === slug);
+}
+
+function createShareableLink() {
+    if (!currentUser) return '';
+    const userSlug = generateUserSlug(currentUser);
+    return `${window.location.origin}${window.location.pathname}?profile=${userSlug}`;
+}
+
 // User Authentication System
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
 let users = JSON.parse(localStorage.getItem('users')) || [];
@@ -354,6 +381,21 @@ function createUserMenu(isWritingMode = false) {
             userMenu.classList.remove('active');
         });
         
+        const publishedButton = document.createElement('button');
+        publishedButton.className = 'user-menu-button';
+        publishedButton.textContent = 'Published';
+        publishedButton.title = 'View public profile';
+        publishedButton.addEventListener('click', () => {
+            const publishedStories = getPublishedStories().filter(story => story.authorId === currentUser.id);
+            if (publishedStories.length > 0) {
+                const userSlug = generateUserSlug(currentUser);
+                displayPublicProfile(userSlug);
+            } else {
+                showProfileFeedback('No published stories yet. Publish some stories to create your public profile.');
+            }
+            userMenu.classList.remove('active');
+        });
+        
         const signOutButton = document.createElement('button');
         signOutButton.className = 'user-menu-button';
         signOutButton.textContent = 'Sign Out';
@@ -363,6 +405,7 @@ function createUserMenu(isWritingMode = false) {
         
         buttonsContainer.appendChild(browseButton);
         buttonsContainer.appendChild(profileButton);
+        buttonsContainer.appendChild(publishedButton);
         buttonsContainer.appendChild(signOutButton);
         // Append buttons container after the toggle button
         userMenu.appendChild(buttonsContainer);
@@ -1406,7 +1449,7 @@ function displayProfilePage() {
     
     profileContainer.appendChild(statsSection);
     
-    // Account actions section
+    // Account Actions section
     const actionsSection = document.createElement('div');
     actionsSection.className = 'profile-section';
     
@@ -1415,27 +1458,36 @@ function displayProfilePage() {
     actionsTitle.textContent = 'Account Actions';
     actionsSection.appendChild(actionsTitle);
     
-    // Change password button
-    const changePasswordBtn = document.createElement('button');
-    changePasswordBtn.className = 'profile-action-button';
-    changePasswordBtn.textContent = 'Change Password';
-    changePasswordBtn.addEventListener('click', () => showChangePasswordDialog());
-    actionsSection.appendChild(changePasswordBtn);
+    const actionsContainer = document.createElement('div');
+    actionsContainer.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    `;
     
-    // Export data button
-    const exportDataBtn = document.createElement('button');
-    exportDataBtn.className = 'profile-action-button';
-    exportDataBtn.textContent = 'Export My Data';
-    exportDataBtn.addEventListener('click', () => exportUserData());
-    actionsSection.appendChild(exportDataBtn);
+    // Change Password button
+    const changePasswordButton = document.createElement('button');
+    changePasswordButton.className = 'profile-action-button';
+    changePasswordButton.textContent = 'Change Password';
+    changePasswordButton.addEventListener('click', showChangePasswordDialog);
+    actionsContainer.appendChild(changePasswordButton);
     
-    // Delete account button
-    const deleteAccountBtn = document.createElement('button');
-    deleteAccountBtn.className = 'profile-action-button danger';
-    deleteAccountBtn.textContent = 'Delete Account';
-    deleteAccountBtn.addEventListener('click', () => showDeleteAccountDialog());
-    actionsSection.appendChild(deleteAccountBtn);
+    // Export Data button
+    const exportDataButton = document.createElement('button');
+    exportDataButton.className = 'profile-action-button';
+    exportDataButton.textContent = 'Export Data';
+    exportDataButton.addEventListener('click', exportUserData);
+    actionsContainer.appendChild(exportDataButton);
     
+    // Delete Account button
+    const deleteAccountButton = document.createElement('button');
+    deleteAccountButton.className = 'profile-action-button danger';
+    deleteAccountButton.textContent = 'Delete Account';
+    deleteAccountButton.addEventListener('click', showDeleteAccountDialog);
+    actionsContainer.appendChild(deleteAccountButton);
+    
+    actionsSection.appendChild(actionsContainer);
     profileContainer.appendChild(actionsSection);
 }
 
@@ -1769,8 +1821,6 @@ function showDeleteAccountDialog() {
             document.body.removeChild(dialog);
         }
     });
-    
-    confirmInput.focus();
 }
 
 function deleteUserAccount() {
@@ -1815,10 +1865,42 @@ function deleteUserAccount() {
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = getUrlParams();
+    
+    // Handle public profile URLs
+    if (urlParams.profile) {
+        if (urlParams.story) {
+            displayPublicStory(urlParams.profile, urlParams.story);
+        } else {
+            displayPublicProfile(urlParams.profile);
+        }
+        return;
+    }
+    
+    // Normal app flow
     if (currentUser) {
         displayMainPage();
     } else {
         displayAuthPage();
+    }
+});
+
+// Handle browser back/forward buttons
+window.addEventListener('popstate', () => {
+    const urlParams = getUrlParams();
+    
+    if (urlParams.profile) {
+        if (urlParams.story) {
+            displayPublicStory(urlParams.profile, urlParams.story);
+        } else {
+            displayPublicProfile(urlParams.profile);
+        }
+    } else {
+        if (currentUser) {
+            displayMainPage();
+        } else {
+            displayAuthPage();
+        }
     }
 });
 
@@ -1878,3 +1960,431 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
+
+// Handle profile URL routing
+const urlParams = getUrlParams();
+if (urlParams.profile) {
+    const user = getUserBySlug(urlParams.profile);
+    if (user) {
+        currentUser = user;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        displayProfilePage();
+    } else {
+        displayReadingPage();
+    }
+} else {
+    document.addEventListener('DOMContentLoaded', () => {
+        if (currentUser) {
+            displayMainPage();
+        } else {
+            displayAuthPage();
+        }
+    });
+}
+
+// Public Profile Display
+function displayPublicProfile(userSlug) {
+    const user = getUserBySlug(userSlug);
+    if (!user) {
+        displayNotFoundPage();
+        return;
+    }
+    
+    document.body.innerHTML = '';
+    document.body.classList.remove('auth-active');
+    
+    // Create dark mode toggle
+    createDarkModeToggle();
+    
+    // Create share button for public profile (positioned next to dark mode toggle)
+    const shareButton = document.createElement('button');
+    shareButton.className = 'share-story-button';
+    shareButton.textContent = '↗';
+    shareButton.title = 'Copy profile link';
+    
+    const profileUrl = `${window.location.origin}${window.location.pathname}?profile=${userSlug}`;
+    
+    shareButton.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(profileUrl);
+            shareButton.textContent = '✓';
+            setTimeout(() => {
+                shareButton.textContent = '↗';
+            }, 2000);
+        } catch (err) {
+            // Fallback for older browsers
+            const tempInput = document.createElement('input');
+            tempInput.value = profileUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            tempInput.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            shareButton.textContent = '✓';
+            setTimeout(() => {
+                shareButton.textContent = '↗';
+            }, 2000);
+        }
+    });
+    
+    document.body.appendChild(shareButton);
+    
+    // Create back/home button
+    const homeButton = document.createElement('button');
+    homeButton.className = 'user-menu-toggle';
+    homeButton.textContent = '←';
+    homeButton.style.position = 'fixed';
+    homeButton.style.top = '20px';
+    homeButton.style.left = '20px';
+    homeButton.style.zIndex = '1000';
+    homeButton.title = 'Back to Stories';
+    homeButton.addEventListener('click', () => {
+        // Clear URL params and go back to main view
+        window.history.pushState({}, '', window.location.pathname);
+        if (currentUser) {
+            displayMainPage();
+        } else {
+            displayAuthPage();
+        }
+    });
+    document.body.appendChild(homeButton);
+    
+    // Create main container
+    const mainContainer = document.createElement('div');
+    mainContainer.className = 'main-container';
+    document.body.appendChild(mainContainer);
+    
+    // User profile header
+    const profileHeader = document.createElement('div');
+    profileHeader.className = 'public-profile-header';
+    
+    // User name as main title
+    const userName = document.createElement('h1');
+    userName.className = 'title';
+    userName.textContent = user.name;
+    userName.style.cursor = 'default';
+    profileHeader.appendChild(userName);
+    
+    // User bio if exists
+    if (user.bio && user.bio.trim()) {
+        const userBio = document.createElement('div');
+        userBio.style.cssText = `
+            font-size: 16px;
+            line-height: 1.6;
+            color: #666;
+            margin-top: 16px;
+            max-width: 480px;
+            white-space: pre-wrap;
+        `;
+        if (document.body.classList.contains('dark-mode')) {
+            userBio.style.color = '#999';
+        }
+        userBio.textContent = user.bio;
+        profileHeader.appendChild(userBio);
+    }
+    
+    // Member since info  
+    const memberInfo = document.createElement('div');
+    memberInfo.style.cssText = `
+        font-size: 12px;
+        color: #999;
+        margin-top: 12px;
+        opacity: 0.8;
+    `;
+    if (document.body.classList.contains('dark-mode')) {
+        memberInfo.style.color = '#666';
+    }
+    memberInfo.textContent = `Writing since ${formatDate(user.createdAt)}`;
+    profileHeader.appendChild(memberInfo);
+    
+    mainContainer.appendChild(profileHeader);
+    
+    // Get published stories for this user
+    const publishedStories = getPublishedStories().filter(story => story.authorId === user.id);
+    
+    if (publishedStories.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'empty-hint';
+        emptyState.innerHTML = `
+            <div>${user.name} hasn't published any stories yet.</div>
+            <div style="margin-top: 12px; font-size: 12px; opacity: 0.6;">Check back later for new stories.</div>
+        `;
+        mainContainer.appendChild(emptyState);
+        return;
+    }
+    
+    // Stories header
+    const storiesHeader = document.createElement('div');
+    storiesHeader.style.cssText = `
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    `;
+    
+    const storiesTitle = document.createElement('h2');
+    storiesTitle.style.cssText = `
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    `;
+    if (document.body.classList.contains('dark-mode')) {
+        storiesTitle.style.color = '#e0e0e0';
+    }
+    storiesTitle.textContent = `Stories (${publishedStories.length})`;
+    
+    const totalWords = publishedStories.reduce((total, story) => total + countWords(story.content), 0);
+    const statsText = document.createElement('div');
+    statsText.style.cssText = `
+        font-size: 12px;
+        color: #666;
+        opacity: 0.8;
+    `;
+    if (document.body.classList.contains('dark-mode')) {
+        statsText.style.color = '#999';
+    }
+    statsText.textContent = `${totalWords.toLocaleString()} words total`;
+    
+    storiesHeader.appendChild(storiesTitle);
+    storiesHeader.appendChild(statsText);
+    mainContainer.appendChild(storiesHeader);
+    
+    // Sort stories by most recent
+    const sortedStories = publishedStories.sort((a, b) => b.publishedAt - a.publishedAt);
+    
+    // Display stories
+    sortedStories.forEach(story => {
+        const storyElement = document.createElement('div');
+        storyElement.className = 'title-container public-story-item';
+        
+        const titleContent = document.createElement('div');
+        titleContent.className = 'title-content';
+        
+        const titleElement = document.createElement('div');
+        titleElement.className = 'page-title';
+        titleElement.textContent = story.title;
+        titleElement.style.marginBottom = '8px';
+        
+        const metaInfo = document.createElement('div');
+        metaInfo.className = 'page-date';
+        const wordCount = countWords(story.content);
+        const readingTime = getReadingTime(wordCount);
+        const viewCount = getStoryViewCount(story.id);
+        metaInfo.textContent = `${formatDate(story.publishedAt)}${readingTime} • ${viewCount} view${viewCount !== 1 ? 's' : ''}`;
+        
+        // Story preview (first 100 characters)
+        const preview = document.createElement('div');
+        preview.className = 'public-story-preview';
+        const previewText = story.content.trim().slice(0, 100);
+        preview.textContent = previewText + (story.content.trim().length > 100 ? '...' : '');
+        
+        titleContent.appendChild(titleElement);
+        titleContent.appendChild(metaInfo);
+        titleContent.appendChild(preview);
+        storyElement.appendChild(titleContent);
+        
+        storyElement.addEventListener('click', () => {
+            displayPublicStory(userSlug, story.id);
+        });
+        
+        mainContainer.appendChild(storyElement);
+    });
+}
+
+function displayPublicStory(userSlug, storyId) {
+    // TODO: delete when deleted in writing
+    // URL when "Published" is clicked
+    // right align the metadata for each story tile
+    const user = getUserBySlug(userSlug);
+    if (!user) {
+        displayNotFoundPage();
+        return;
+    }
+    
+    const publishedStories = getPublishedStories();
+    const story = publishedStories.find(s => s.id === storyId && s.authorId === user.id);
+    
+    if (!story) {
+        displayPublicProfile(userSlug);
+        return;
+    }
+    
+    // Increment view count
+    incrementStoryView(storyId);
+    
+    // Update URL without page reload
+    window.history.pushState({}, '', `?profile=${userSlug}&story=${storyId}`);
+    
+    document.body.innerHTML = '';
+    
+    // Create dark mode toggle
+    createDarkModeToggle();
+    
+    // Create back button
+    const backButton = document.createElement('button');
+    backButton.className = 'user-menu-toggle';
+    backButton.textContent = '←';
+    backButton.style.position = 'fixed';
+    backButton.style.top = '20px';
+    backButton.style.left = '20px';
+    backButton.style.zIndex = '1000';
+    backButton.title = `Back to ${user.name}'s stories`;
+    backButton.addEventListener('click', () => {
+        window.history.pushState({}, '', `?profile=${userSlug}`);
+        displayPublicProfile(userSlug);
+    });
+    document.body.appendChild(backButton);
+    
+    // Create reading container
+    const readingContainer = document.createElement('div');
+    readingContainer.className = 'writing-container';
+    document.body.appendChild(readingContainer);
+    
+    // Story title
+    const titleElement = document.createElement('h1');
+    titleElement.className = 'title';
+    titleElement.textContent = story.title;
+    titleElement.style.cursor = 'default';
+    readingContainer.appendChild(titleElement);
+    
+    // Author and date info
+    const metaInfo = document.createElement('div');
+    metaInfo.style.cssText = `
+        font-size: 14px;
+        color: #999;
+        margin-bottom: 40px;
+        opacity: 0.8;
+    `;
+    
+    const authorLink = document.createElement('span');
+    authorLink.style.cssText = `
+        cursor: pointer;
+        text-decoration: underline;
+        color: inherit;
+    `;
+    authorLink.textContent = story.authorName;
+    authorLink.addEventListener('click', () => {
+        window.history.pushState({}, '', `?profile=${userSlug}`);
+        displayPublicProfile(userSlug);
+    });
+    
+    const dateText = document.createElement('span');
+    dateText.textContent = ` • ${formatDate(story.publishedAt)}`;
+    
+    metaInfo.appendChild(document.createTextNode('by '));
+    metaInfo.appendChild(authorLink);
+    metaInfo.appendChild(dateText);
+    readingContainer.appendChild(metaInfo);
+    
+    // Story content
+    const contentElement = document.createElement('div');
+    contentElement.style.cssText = `
+        font-size: 16px;
+        line-height: 1.75;
+        white-space: pre-wrap;
+        color: inherit;
+        max-width: 480px;
+        margin-bottom: 40px;
+    `;
+    contentElement.textContent = story.content;
+    readingContainer.appendChild(contentElement);
+    
+    // Create simple share button (positioned next to dark mode toggle)
+    const shareButton = document.createElement('button');
+    shareButton.className = 'share-story-button';
+    shareButton.textContent = '↗';
+    shareButton.title = 'Copy story link';
+    
+    const storyUrl = `${window.location.origin}${window.location.pathname}?profile=${userSlug}&story=${storyId}`;
+    
+    shareButton.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(storyUrl);
+            shareButton.textContent = '✓';
+            setTimeout(() => {
+                shareButton.textContent = '↗';
+            }, 2000);
+        } catch (err) {
+            // Fallback for older browsers
+            const tempInput = document.createElement('input');
+            tempInput.value = storyUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            tempInput.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            shareButton.textContent = '✓';
+            setTimeout(() => {
+                shareButton.textContent = '↗';
+            }, 2000);
+        }
+    });
+    
+    document.body.appendChild(shareButton);
+    
+    // Add reading progress indicator
+    const progressBar = document.createElement('div');
+    progressBar.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 2px;
+        background: #007acc;
+        z-index: 1000;
+        transition: width 0.1s ease;
+        width: 0%;
+    `;
+    document.body.appendChild(progressBar);
+    
+    // Update progress on scroll
+    function updateProgress() {
+        const scrolled = window.scrollY;
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = maxScroll > 0 ? (scrolled / maxScroll) * 100 : 0;
+        progressBar.style.width = `${Math.min(progress, 100)}%`;
+    }
+    
+    window.addEventListener('scroll', updateProgress);
+    updateProgress(); // Initial call
+}
+
+function displayNotFoundPage() {
+    document.body.innerHTML = '';
+    document.body.classList.remove('auth-active');
+    
+    // Create dark mode toggle
+    createDarkModeToggle();
+    
+    // Create home button
+    const homeButton = document.createElement('button');
+    homeButton.className = 'user-menu-toggle';
+    homeButton.textContent = '←';
+    homeButton.style.position = 'fixed';
+    homeButton.style.top = '20px';
+    homeButton.style.left = '20px';
+    homeButton.style.zIndex = '1000';
+    homeButton.title = 'Back to Stories';
+    homeButton.addEventListener('click', () => {
+        window.history.pushState({}, '', window.location.pathname);
+        if (currentUser) {
+            displayMainPage();
+        } else {
+            displayAuthPage();
+        }
+    });
+    document.body.appendChild(homeButton);
+    
+    // Create main container
+    const mainContainer = document.createElement('div');
+    mainContainer.className = 'main-container';
+    document.body.appendChild(mainContainer);
+    
+    const notFoundMessage = document.createElement('div');
+    notFoundMessage.className = 'empty-hint';
+    notFoundMessage.innerHTML = `
+        <div>Profile not found</div>
+        <div style="margin-top: 12px; font-size: 12px; opacity: 0.6;">The profile you're looking for doesn't exist or has been removed.</div>
+    `;
+    mainContainer.appendChild(notFoundMessage);
+}

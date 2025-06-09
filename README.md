@@ -21,6 +21,8 @@ A minimal, beautiful writing platform where you can create accounts and publish 
 - **Story analytics** - Track how many people read your published stories
 - **Reading experience** - Beautiful, reader-friendly display with progress indicators
 - **Browse stories** - Discover stories from all users, sorted by date or author
+- **Shareable profiles** - Each user gets a unique link to share all their published stories
+- **Individual story links** - Share specific stories with direct links
 
 ### Keyboard Shortcuts
 - **⌘D** - Toggle dark mode
@@ -37,6 +39,13 @@ A minimal, beautiful writing platform where you can create accounts and publish 
 3. Click anywhere to start writing your first story
 4. Use the publish button (○) to share stories publicly
 5. Browse published stories from all users
+6. Share your public profile link with others to showcase your writing
+
+### Sharing Your Writing
+
+- **Profile Link**: Go to Profile and copy your shareable link - this shows all your published stories
+- **Quick Share**: Use the "Share" button in the user menu to quickly copy your profile link
+- **Individual Stories**: Each published story has its own shareable link for direct access
 
 ## Technical Details
 

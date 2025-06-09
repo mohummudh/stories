@@ -61,6 +61,42 @@ body.dark-mode .dark-mode-toggle:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
+.share-story-button {
+    position: fixed;
+    top: 20px;
+    right: 70px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #666;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+}
+
+.share-story-button:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.05);
+}
+
+body.dark-mode .share-story-button {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ccc;
+}
+
+body.dark-mode .share-story-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
 .main-container {
     padding: 80px 120px 40px 120px;
     min-height: 100vh;
@@ -1066,4 +1102,101 @@ body.dark-mode .profile-dialog-button.danger {
 body.dark-mode .profile-dialog-button.danger:hover {
     background: #d32f2f;
     border-color: #d32f2f;
+}
+
+/* Public Profile Styles */
+.public-profile-header {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .public-profile-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.public-story-preview {
+    font-size: 14px;
+    color: #666;
+    margin-top: 8px;
+    line-height: 1.5;
+    opacity: 0.8;
+    padding-left: 8px;
+}
+
+body.dark-mode .public-story-preview {
+    color: #999;
+}
+
+.public-story-item {
+    margin-bottom: 20px;
+    cursor: pointer;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s ease;
+}
+
+body.dark-mode .public-story-item {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.public-story-item:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+body.dark-mode .public-story-item:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.url-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .url-container {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.url-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    color: inherit;
+    font-family: monospace;
+    padding: 0;
+}
+
+.copy-button {
+    margin: 0;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    color: inherit;
+    font-family: inherit;
+}
+
+body.dark-mode .copy-button {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.copy-button:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+body.dark-mode .copy-button:hover {
+    background: rgba(255, 255, 255, 0.08);
 }
