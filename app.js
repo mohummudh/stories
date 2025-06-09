@@ -1,6 +1,40 @@
 // Initialize or load existing notes from localStorage
 let pages = JSON.parse(localStorage.getItem('pages')) || [];
 
+// Initialize dark mode from localStorage
+let isDarkMode = localStorage.getItem('darkMode') === 'true';
+
+// Apply dark mode on load
+if (isDarkMode) {
+    document.documentElement.classList.add('dark-mode');
+    document.body.classList.add('dark-mode');
+}
+
+// Toggle dark mode function
+function toggleDarkMode() {
+    isDarkMode = !isDarkMode;
+    document.documentElement.classList.toggle('dark-mode', isDarkMode);
+    document.body.classList.toggle('dark-mode', isDarkMode);
+    localStorage.setItem('darkMode', isDarkMode.toString());
+    
+    // Update toggle button icon
+    const toggleButton = document.querySelector('.dark-mode-toggle');
+    if (toggleButton) {
+        toggleButton.textContent = isDarkMode ? '○' : '●';
+    }
+}
+
+// Create dark mode toggle button
+function createDarkModeToggle() {
+    const toggleButton = document.createElement('button');
+    toggleButton.className = 'dark-mode-toggle';
+    toggleButton.textContent = isDarkMode ? '○' : '●';
+    toggleButton.title = isDarkMode ? 'Switch to light mode' : 'Switch to dark mode';
+    toggleButton.addEventListener('click', toggleDarkMode);
+    document.body.appendChild(toggleButton);
+    return toggleButton;
+}
+
 // Migrate existing pages to include timestamps
 pages = pages.map(page => {
     if (!page.createdAt) {
@@ -64,6 +98,9 @@ function displayMainPage() {
     
     document.body.innerHTML = '';
     
+    // Create dark mode toggle
+    createDarkModeToggle();
+    
     // Create main container
     const mainContainer = document.createElement('div');
     mainContainer.className = 'main-container';
@@ -83,7 +120,7 @@ function displayMainPage() {
     if (sortedPages.length === 0) {
         const hint = document.createElement('div');
         hint.className = 'empty-hint';
-        hint.innerHTML = 'Click anywhere to start writing<br><span style="font-size: 11px; opacity: 0.6;">Press / to search • 1-9 for quick access • Escape to return • ⌘⌫ to delete</span>';
+        hint.innerHTML = 'Click anywhere to start writing<br><span style="font-size: 11px; opacity: 0.6;">Press / to search • 1-9 for quick access • ⌘D for dark mode • Escape to return • ⌘⌫ to delete</span>';
         mainContainer.appendChild(hint);
     }
 
@@ -170,6 +207,9 @@ function createTitleInput(event) {
 // Simple search functionality
 function displaySearchResults(query) {
     document.body.innerHTML = '';
+    
+    // Create dark mode toggle
+    createDarkModeToggle();
     
     const mainContainer = document.createElement('div');
     mainContainer.className = 'main-container';
@@ -270,6 +310,9 @@ function displaySearchResults(query) {
 // Open a specific note for editing
 function openPage(id) {
     document.body.innerHTML = '';
+
+    // Create dark mode toggle
+    createDarkModeToggle();
 
     const page = pages.find(p => p.id === id);
     if (!page) {
@@ -522,6 +565,13 @@ document.addEventListener('DOMContentLoaded', displayMainPage);
 
 // Global keyboard shortcuts
 document.addEventListener('keydown', (e) => {
+    // Dark mode toggle with Cmd/Ctrl + D
+    if ((e.metaKey || e.ctrlKey) && e.key === 'd' && !e.shiftKey) {
+        e.preventDefault();
+        toggleDarkMode();
+        return;
+    }
+    
     // Only handle global shortcuts on main page (not when in a note)
     if (document.querySelector('textarea')) return;
     
