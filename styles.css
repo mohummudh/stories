@@ -1,12 +1,28 @@
 html, body {
-    height: 100%;
+    height: 100vh;
     margin: 0;
-    padding: 40px;
+    padding: 0;
     background-color: #f8f5f1;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     line-height: 1.6;
     box-sizing: border-box;
+    overflow: hidden;
+    color: #333;
+}
+
+.main-container {
+    height: 100vh;
+    padding: 40px;
     overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.writing-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 40px;
+    box-sizing: border-box;
 }
 
 input {
@@ -24,27 +40,180 @@ textarea {
     background: transparent;
     border: none;
     outline: none;
-    font-size: inherit;
+    font-size: 16px;
     font-family: inherit;
     width: 100%;
-    max-width: 450px;
-    height: 90vh;
+    max-width: 480px;
+    flex: 1;
     padding: 0;
-    margin: 20px 0 0 0;
-    outline: none;
+    margin: 20px 0 60px 0;
     resize: none;
-    /* overflow: hidden; */
+    color: #444;
+    line-height: 1.75;
+    overflow-y: auto;
+    transition: color 0.2s ease;
+    letter-spacing: 0.01em;
+}
+
+textarea::placeholder {
+    color: #bbb;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+textarea:focus {
+    color: #222;
+}
+
+textarea:focus + .word-count {
+    opacity: 0.4;
+}
+
+/* Better text selection */
+textarea::selection {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: inherit;
 }
 
 .title {
-    font-weight: bold;
-    margin: 0;
+    font-weight: 600;
+    font-size: 20px;
+    margin: 0 0 8px 0;
     padding: 0;
+    color: #333;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    letter-spacing: -0.01em;
+}
+
+.title:hover {
+    color: #555;
+}
+
+.title-edit {
+    font-weight: 600;
+    font-size: 20px;
+    color: #333;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.01em;
 }
 
 .page-title {
-    font-weight: bold;
+    font-weight: 600;
+    font-size: 17px;
     cursor: pointer;
     padding: 0;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    opacity: 0.85;
+    color: #444;
+    letter-spacing: -0.005em;
+}
+
+.page-title:hover {
+    opacity: 1;
+    transform: translateX(3px);
+    color: #222;
+}
+
+.word-count {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+    font-size: 12px;
+    color: #999;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.page-date {
+    font-size: 12px;
+    color: #999;
+    margin-left: 8px;
+    font-weight: normal;
+}
+
+.title-container {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.number-hint {
+    position: absolute;
+    left: -25px;
+    font-size: 11px;
+    color: #ccc;
+    font-weight: 400;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    width: 15px;
+    text-align: right;
+}
+
+.title-container:hover .number-hint {
+    opacity: 0.5;
+}
+
+.empty-hint {
+    text-align: center;
+    color: #999;
+    font-size: 14px;
+    margin-top: 20vh;
+    line-height: 1.8;
+}
+
+.search-container {
+    margin-bottom: 30px;
+}
+
+.search-input {
+    width: 100%;
+    max-width: 450px;
+    font-size: 16px;
+    color: #666;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+}
+
+.search-result {
+    opacity: 0.9;
+}
+
+.search-result:hover {
+    opacity: 1;
+}
+
+/* Focus mode - dim UI when writing */
+.writing-container.focused .title {
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+}
+
+.writing-container.focused .word-count {
+    opacity: 0.2;
+}
+
+/* Restore on hover */
+.writing-container.focused .title:hover {
+    opacity: 0.8;
+}
+
+.writing-container.focused .word-count:hover {
+    opacity: 0.6;
+}
+
+@media (max-width: 600px) {
+    .main-container,
+    .writing-container {
+        padding: 20px;
+    }
+    
+    .word-count {
+        bottom: 20px;
+        right: 20px;
+    }
 }
