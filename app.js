@@ -92,6 +92,10 @@ function displayMainPage() {
         const titleContainer = document.createElement('div');
         titleContainer.className = 'title-container';
         
+        // Create title content wrapper
+        const titleContent = document.createElement('div');
+        titleContent.className = 'title-content';
+        
         const titleElement = document.createElement('div');
         titleElement.textContent = page.title;
         titleElement.className = 'page-title';
@@ -103,21 +107,34 @@ function displayMainPage() {
             const numberHint = document.createElement('span');
             numberHint.className = 'number-hint';
             numberHint.textContent = `${index + 1}`;
-            titleContainer.appendChild(numberHint);
+            titleContent.appendChild(numberHint);
         }
         
         const dateElement = document.createElement('span');
         dateElement.className = 'page-date';
         dateElement.textContent = formatDate(page.modifiedAt || page.createdAt || page.id);
         
-        titleContainer.appendChild(titleElement);
-        titleContainer.appendChild(dateElement);
+        titleContent.appendChild(titleElement);
+        titleContent.appendChild(dateElement);
+        
+        // Create delete button
+        const deleteButton = document.createElement('span');
+        deleteButton.className = 'delete-button';
+        deleteButton.textContent = '×';
+        deleteButton.title = 'Delete note';
         
         titleElement.addEventListener('click', (e) => {
             e.stopPropagation();
             openPage(page.id);
         });
         
+        deleteButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deletePage(page.id);
+        });
+        
+        titleContainer.appendChild(titleContent);
+        titleContainer.appendChild(deleteButton);
         mainContainer.appendChild(titleContainer);
     });
 }
@@ -170,34 +187,66 @@ function displaySearchResults(query) {
     searchContainer.appendChild(searchInput);
     mainContainer.appendChild(searchContainer);
     
-    const results = pages.filter(page => 
-        page.title.toLowerCase().includes(query.toLowerCase()) ||
-        page.content.toLowerCase().includes(query.toLowerCase())
-    );
-    
-    results.forEach(page => {
-        const titleContainer = document.createElement('div');
-        titleContainer.className = 'title-container search-result';
+    // Show hint if no query
+    if (query.trim() === '') {
+        const hint = document.createElement('div');
+        hint.className = 'search-hint';
+        hint.innerHTML = 'Start typing to search through your notes<br><span style="font-size: 12px; opacity: 0.6;">Press Escape to return</span>';
+        mainContainer.appendChild(hint);
+    } else {
+        const results = pages.filter(page => 
+            page.title.toLowerCase().includes(query.toLowerCase()) ||
+            page.content.toLowerCase().includes(query.toLowerCase())
+        );
         
-        const titleElement = document.createElement('div');
-        titleElement.textContent = page.title;
-        titleElement.className = 'page-title';
-        titleElement.style.cursor = 'pointer';
-        
-        const dateElement = document.createElement('span');
-        dateElement.className = 'page-date';
-        dateElement.textContent = formatDate(page.modifiedAt || page.createdAt || page.id);
-        
-        titleContainer.appendChild(titleElement);
-        titleContainer.appendChild(dateElement);
-        
-        titleElement.addEventListener('click', (e) => {
-            e.stopPropagation();
-            openPage(page.id);
-        });
-        
-        mainContainer.appendChild(titleContainer);
-    });
+        if (results.length === 0) {
+            const noResults = document.createElement('div');
+            noResults.className = 'search-hint';
+            noResults.textContent = 'No notes found';
+            mainContainer.appendChild(noResults);
+        } else {
+            results.forEach(page => {
+                const titleContainer = document.createElement('div');
+                titleContainer.className = 'title-container search-result';
+                
+                // Create title content wrapper
+                const titleContent = document.createElement('div');
+                titleContent.className = 'title-content';
+                
+                const titleElement = document.createElement('div');
+                titleElement.textContent = page.title;
+                titleElement.className = 'page-title';
+                titleElement.style.cursor = 'pointer';
+                
+                const dateElement = document.createElement('span');
+                dateElement.className = 'page-date';
+                dateElement.textContent = formatDate(page.modifiedAt || page.createdAt || page.id);
+                
+                titleContent.appendChild(titleElement);
+                titleContent.appendChild(dateElement);
+                
+                // Create delete button
+                const deleteButton = document.createElement('span');
+                deleteButton.className = 'delete-button';
+                deleteButton.textContent = '×';
+                deleteButton.title = 'Delete note';
+                
+                titleElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openPage(page.id);
+                });
+                
+                deleteButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deletePage(page.id);
+                });
+                
+                titleContainer.appendChild(titleContent);
+                titleContainer.appendChild(deleteButton);
+                mainContainer.appendChild(titleContainer);
+            });
+        }
+    }
     
     searchInput.focus();
     
@@ -284,6 +333,15 @@ function openPage(id) {
     textarea.value = page.content;
     textarea.placeholder = 'Start writing...';
     
+    // Auto-resize textarea to fit content
+    function autoResize() {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.max(textarea.scrollHeight, window.innerHeight * 0.6) + 'px';
+    }
+    
+    // Initial resize
+    setTimeout(autoResize, 0);
+    
     // Create word count display  
     const wordCount = document.createElement('div');
     wordCount.className = 'word-count';
@@ -295,6 +353,7 @@ function openPage(id) {
         page.modifiedAt = Date.now();
         const words = countWords(textarea.value);
         wordCount.textContent = `${words} words${getReadingTime(words)}`;
+        autoResize();
         savePages();
     });
     
@@ -416,18 +475,23 @@ function openPage(id) {
             
             // Remove the event listeners before deleting
             document.removeEventListener('keydown', pageHandler);
+            window.removeEventListener('resize', autoResize);
             
             // Delete the page and return to main page
             deletePage(id);
         } else if (e.key === 'Escape') {
             // Remove the event listeners before going back
             document.removeEventListener('keydown', pageHandler);
+            window.removeEventListener('resize', autoResize);
             displayMainPage();
         }
     });
 
     writingContainer.appendChild(textarea);
     writingContainer.appendChild(wordCount);
+    
+    // Handle window resize
+    window.addEventListener('resize', autoResize);
     
     // Focus mode - dim UI when actively writing
     let focusTimer;
