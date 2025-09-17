@@ -338,6 +338,19 @@ function createUserMenu(isWritingMode = false) {
         const buttonsContainer = document.createElement('div');
         buttonsContainer.className = 'user-menu-buttons';
         
+        // Home button - navigates back to the main page
+        const homeButton = document.createElement('button');
+        homeButton.className = 'user-menu-button home-button';
+        homeButton.textContent = 'Home';
+        homeButton.title = 'Home';
+        homeButton.setAttribute('aria-label', 'Home');
+        homeButton.setAttribute('tabindex', '0');
+        homeButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            displayMainPage();
+            userMenu.classList.remove('active');
+        });
+
         const browseButton = document.createElement('button');
         browseButton.className = 'user-menu-button';
         browseButton.textContent = 'Browse';
@@ -361,6 +374,8 @@ function createUserMenu(isWritingMode = false) {
             signOut();
         });
         
+        // Insert Home first so it appears closest to the avatar/toggle
+        buttonsContainer.appendChild(homeButton);
         buttonsContainer.appendChild(browseButton);
         buttonsContainer.appendChild(profileButton);
         buttonsContainer.appendChild(signOutButton);
@@ -439,13 +454,13 @@ function displayMainPage() {
         titleElement.style.marginBottom = '15px';
         
         // Add published indicator
-        if (isStoryPublished(page.id)) {
-            const publishedIndicator = document.createElement('span');
-            publishedIndicator.className = 'published-indicator';
-            publishedIndicator.textContent = ' ✓';
-            publishedIndicator.title = 'Published story';
-            titleElement.appendChild(publishedIndicator);
-        }
+        // if (isStoryPublished(page.id)) {
+        //     const publishedIndicator = document.createElement('span');
+        //     publishedIndicator.className = 'published-indicator';
+        //     publishedIndicator.textContent = ' ✓';
+        //     publishedIndicator.title = 'Published story';
+        //     titleElement.appendChild(publishedIndicator);
+        // }
         
         // Add subtle number indicator for quick access
         if (index < 9) {
@@ -527,16 +542,16 @@ function displayMainPage() {
             publishButton.title = nowPublished ? 'Unpublish story' : 'Publish story';
             
             // Update published indicator in title
-            const existingIndicator = titleElement.querySelector('.published-indicator');
-            if (nowPublished && !existingIndicator) {
-                const publishedIndicator = document.createElement('span');
-                publishedIndicator.className = 'published-indicator';
-                publishedIndicator.textContent = ' ✓';
-                publishedIndicator.title = 'Published story';
-                titleElement.appendChild(publishedIndicator);
-            } else if (!nowPublished && existingIndicator) {
-                existingIndicator.remove();
-            }
+            // const existingIndicator = titleElement.querySelector('.published-indicator');
+            // if (nowPublished && !existingIndicator) {
+            //     const publishedIndicator = document.createElement('span');
+            //     publishedIndicator.className = 'published-indicator';
+            //     publishedIndicator.textContent = ' ✓';
+            //     publishedIndicator.title = 'Published story';
+            //     titleElement.appendChild(publishedIndicator);
+            // } else if (!nowPublished && existingIndicator) {
+            //     existingIndicator.remove();
+            // }
             
             // Show brief feedback
             const feedback = document.createElement('div');

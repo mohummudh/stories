@@ -700,6 +700,15 @@ body.dark-mode .user-menu-button:hover {
     opacity: 1;
 }
 
+/* Home button inherits user menu button styles but can have a subtle emphasis */
+.home-button {
+    font-weight: 600;
+}
+
+body.dark-mode .home-button {
+    color: #e0e0e0;
+}
+
 /* Profile System Styles */
 .profile-container {
     max-width: 480px;
