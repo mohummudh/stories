@@ -1,14 +1,14 @@
 # Stories - still in dev
 
-**Share authentic stories from your life**
+**Write in peace**
 
-A minimal, beautiful writing platform where you can create accounts and publish authentic life stories for public reading.
+A super simple place to write.
 
 ---
 
 ## Tell a story
 
-Clean, distraction-free writing with powerful features to help you craft and share your stories.
+Clean, distraction-free writing with powerful features to help you craft your writing/stories.
 
 ### Simple Start
 ![Getting started with Stories](docs/start.png)
@@ -33,29 +33,7 @@ Eye-friendly dark mode for comfortable writing in any lighting. Toggle with ⌘D
 ### Your Stories, Secure
 ![Secure user accounts](docs/login.png)
 
-Personal accounts keep your drafts private until you're ready to share. Publish with one click when ready.
-
----
-
-## Technical Features
-
-### Writing Experience
-- **Clean, distraction-free interface** - Click anywhere to start writing
-- **Smart text editing** - Auto-formatting for quotes, dashes, lists, and indentation
-- **Focus mode** - UI controls fade during active writing (⌘F to toggle)
-- **Word count & reading time** - Real-time feedback on your progress
-- **Dark mode** - Eye-friendly writing in low light (⌘D to toggle)
-
-### User Management
-- **Secure accounts** - Email/password authentication with user-specific data
-- **Personal library** - All your stories are private by default
-- **Quick access** - Use number keys (1-9) for instant navigation to recent stories
-
-### Publishing System
-- **One-click publishing** - Share your stories with a simple publish button (○/◉)
-- **Story analytics** - Track how many people read your published stories
-- **Reading experience** - Beautiful, reader-friendly display with progress indicators
-- **Browse stories** - Discover stories from all users, sorted by date or author
+Personal accounts keep your drafts private.
 
 ---
 
