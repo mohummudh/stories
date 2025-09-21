@@ -1,14 +1,24 @@
 # Stories — still in dev
 
+<<<<<<< HEAD
 **A minimal place to write**
 
 A clean, fast writing surface with just the essentials.
+=======
+**Write in peace**
+
+A super simple place to write.
+>>>>>>> 9af165bf1ff910ce8c08826c8f453b261d101f89
 
 ---
 
 ## Write
 
+<<<<<<< HEAD
 Clean, distraction-free writing. No clutter, just words.
+=======
+Clean, distraction-free writing with powerful features to help you craft your writing/stories.
+>>>>>>> 9af165bf1ff910ce8c08826c8f453b261d101f89
 
 ### Simple Start
 ![Getting started with Stories](docs/start.png)
@@ -35,6 +45,7 @@ Eye-friendly dark mode for comfortable writing in any lighting. Toggle with ⌘D
 ### Private by default
 ![Secure user accounts](docs/login.png)
 
+<<<<<<< HEAD
 Your drafts stay private. Publish only when you want.
 
 Manage your profile: edit name and bio, view stats, change password, export data, or delete your account.
@@ -65,6 +76,9 @@ Manage your profile: edit name and bio, view stats, change password, export data
 ### Profile & Account
 - **Profile** - Update name and bio, see your stats (stories, published, views, words)
 - **Account actions** - Change password, export data, or delete your account
+=======
+Personal accounts keep your drafts private.
+>>>>>>> 9af165bf1ff910ce8c08826c8f453b261d101f89
 
 ---
 
