@@ -1,14 +1,14 @@
-# Stories - still in dev
+# Stories — still in dev
 
-**Share authentic stories from your life**
+**A minimal place to write**
 
-A minimal, beautiful writing platform where you can create accounts and publish authentic life stories for public reading.
+A clean, fast writing surface with just the essentials.
 
 ---
 
-## Tell a story
+## Write
 
-Clean, distraction-free writing with powerful features to help you craft and share your stories.
+Clean, distraction-free writing. No clutter, just words.
 
 ### Simple Start
 ![Getting started with Stories](docs/start.png)
@@ -25,15 +25,19 @@ Distraction-free interface with smart text editing, word count, and focus mode f
 
 Keep all your stories in one place with quick navigation, search functionality, and easy publishing controls.
 
+The header includes a Home button for a quick return to your writing.
+
 ### Dark Mode
 ![Dark mode for comfortable writing](docs/dark.png)
 
 Eye-friendly dark mode for comfortable writing in any lighting. Toggle with ⌘D anytime.
 
-### Your Stories, Secure
+### Private by default
 ![Secure user accounts](docs/login.png)
 
-Personal accounts keep your drafts private until you're ready to share. Publish with one click when ready.
+Your drafts stay private. Publish only when you want.
+
+Manage your profile: edit name and bio, view stats, change password, export data, or delete your account.
 
 ---
 
@@ -50,12 +54,17 @@ Personal accounts keep your drafts private until you're ready to share. Publish 
 - **Secure accounts** - Email/password authentication with user-specific data
 - **Personal library** - All your stories are private by default
 - **Quick access** - Use number keys (1-9) for instant navigation to recent stories
+- **Home button** - Jump back to your stories from anywhere
 
-### Publishing System
-- **One-click publishing** - Share your stories with a simple publish button (○/◉)
-- **Story analytics** - Track how many people read your published stories
-- **Reading experience** - Beautiful, reader-friendly display with progress indicators
-- **Browse stories** - Discover stories from all users, sorted by date or author
+### Optional publishing
+- **Publish (○/◉)** - Share when you’re ready
+- **Views** - Simple reader counts
+- **Reader view** - Clean, focused display
+- **Browse** - See published writing by all users
+
+### Profile & Account
+- **Profile** - Update name and bio, see your stats (stories, published, views, words)
+- **Account actions** - Change password, export data, or delete your account
 
 ---
 
@@ -66,14 +75,16 @@ Personal accounts keep your drafts private until you're ready to share. Publish 
 - **/** - Search your stories
 - **1-9** - Quick access to recent stories
 - **Escape** - Return to main page
+ 
+Tip: Click your name (top-left) to open the menu (Home, Browse, Profile, Sign Out).
 
 ## Getting Started
 
 1. **Open the app** in your browser
 2. **Create an account** with your email and name
 3. **Click anywhere** to start writing your first story
-4. **Use the publish button** (○) to share stories publicly
-5. **Browse published stories** from all users
+4. Optional: **Publish** (○) when ready
+5. **Go Home** to your library or **Browse** published writing
 
 ## Technical Details
 
@@ -84,12 +95,12 @@ Personal accounts keep your drafts private until you're ready to share. Publish 
 
 ---
 
-## Built for Storytellers
+## Built for writing
 
-Whether you're writing memoirs, daily reflections, or life experiences, Stories provides the perfect environment to craft and share your narrative.
+Fast to open, simple to use, and focused on the words.
 
 **[Live Demo](https://mohummudh.github.io/stories/)**
 
 ---
 
-*Stories • A minimal writing platform for authentic storytelling* 
+*Stories • A minimal place to write*
